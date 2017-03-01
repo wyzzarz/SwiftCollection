@@ -10,6 +10,7 @@
 		99DDA66F1E66731000F99C3F /* SwiftCollection.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99DDA6651E66731000F99C3F /* SwiftCollection.framework */; };
 		99DDA6741E66731000F99C3F /* SwiftCollectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6731E66731000F99C3F /* SwiftCollectionTests.swift */; };
 		99DDA6761E66731000F99C3F /* SwiftCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 99DDA6681E66731000F99C3F /* SwiftCollection.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		99DDA6AE1E669EFB00F99C3F /* SwiftCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6AD1E669EFB00F99C3F /* SwiftCollection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +31,7 @@
 		99DDA6731E66731000F99C3F /* SwiftCollectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCollectionTests.swift; sourceTree = "<group>"; };
 		99DDA6AA1E669C1E00F99C3F /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		99DDA6AB1E669C1E00F99C3F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		99DDA6AD1E669EFB00F99C3F /* SwiftCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftCollection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				99DDA6681E66731000F99C3F /* SwiftCollection.h */,
+				99DDA6AD1E669EFB00F99C3F /* SwiftCollection.swift */,
 			);
 			path = SwiftCollection;
 			sourceTree = "<group>";
@@ -159,6 +162,7 @@
 				TargetAttributes = {
 					99DDA6641E66731000F99C3F = {
 						CreatedOnToolsVersion = 8.2.1;
+						LastSwiftMigration = 0820;
 						ProvisioningStyle = Automatic;
 					};
 					99DDA66D1E66731000F99C3F = {
@@ -207,6 +211,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				99DDA6AE1E669EFB00F99C3F /* SwiftCollection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,6 +336,7 @@
 		99DDA67A1E66731000F99C3F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -342,6 +348,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.wyz.SwiftCollection;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -349,6 +356,7 @@
 		99DDA67B1E66731000F99C3F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -367,6 +375,7 @@
 		99DDA67D1E66731000F99C3F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				INFOPLIST_FILE = SwiftCollection/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.wyz.SwiftCollectionTests;
@@ -378,6 +387,7 @@
 		99DDA67E1E66731000F99C3F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				INFOPLIST_FILE = SwiftCollection/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.wyz.SwiftCollectionTests;

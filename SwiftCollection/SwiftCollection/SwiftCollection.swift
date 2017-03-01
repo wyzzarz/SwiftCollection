@@ -1,6 +1,5 @@
 //
-//  AppDelegate.swift
-//  SwiftCollectionExample
+//  SwiftCollection.swift
 //
 //  Copyright 2017 Warner Zee
 //
@@ -17,20 +16,22 @@
 //  limitations under the License.
 //
 
-import UIKit
-import SwiftCollection
+import Foundation
 
-@UIApplicationMain
+public struct SwiftCollection {
+  
+  /// Bundle Id for this framework.
+  public static let bundleId = "com.wyz.SwiftCollection"
 
-class AppDelegate: UIResponder, UIApplicationDelegate {
+  /// Bundle for this framework.
+  public static let bundle = Bundle(identifier: bundleId)!
   
-  var window: UIWindow?
-  
-  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-    
-    print("Using \(SwiftCollection.name)")
-    
-    return true
+  /// Name for this framework.
+  public static var name: String {
+    let info = bundle.infoDictionary!
+    let name = info["CFBundleName"] as! String
+    let version = info["CFBundleShortVersionString"] as! String
+    return "\(name) v\(version)"
   }
   
 }
