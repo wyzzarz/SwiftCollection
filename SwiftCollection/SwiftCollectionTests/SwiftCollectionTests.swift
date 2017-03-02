@@ -30,8 +30,32 @@ class SwiftCollectionTests: XCTestCase {
   }
   
   func testBundle() {
-    XCTAssertTrue(SwiftCollection.bundleId.lengthOfBytes(using: .utf8) > 0)
+    XCTAssertTrue(SwiftCollection.bundleId.characters.count > 0)
     XCTAssertNotNil(SwiftCollection.bundle)
   }
   
+  func testHexId() {
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x0001000200030004)!.toHexString(), "0001000200030004")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 1), "12-34-56-78-90-AB-CD-EF")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 2), "1234-5678-90AB-CDEF")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 3, separator: ":"), "123456:7890AB:CDEF")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 4), "12345678-90ABCDEF")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 8), "1234567890ABCDEF")
+    XCTAssertEqual(SwiftCollection.Id(exactly: 0x1234567890ABCDEF)!.toHexString(groupEvery: 9), "1234567890ABCDEF")
+    XCTAssertEqual(SwiftCollection.Id.max.toHexString(), "FFFFFFFFFFFFFFFF")
+  }
+  
+  func testRandomId() {
+    XCTAssertGreaterThan(SwiftCollection.Id.random(), 0)
+    XCTAssertEqual(SwiftCollection.Id.random(upper: SwiftCollection.Id.max, lower: SwiftCollection.Id.max), SwiftCollection.Id.max)
+    XCTAssertEqual(SwiftCollection.Id.random(upper: SwiftCollection.Id.min, lower: SwiftCollection.Id.min), SwiftCollection.Id.min)
+    XCTAssertEqual(SwiftCollection.Id.random(upper: 5, lower: 5), 5)
+    var i: UInt = 0
+    while i < 10000 {
+      XCTAssertGreaterThanOrEqual(SwiftCollection.Id.random(upper: 10, lower: 5), 5)
+      XCTAssertLessThanOrEqual(SwiftCollection.Id.random(upper: 10, lower: 5), 10)
+      i += 1
+    }
+  }
+
 }

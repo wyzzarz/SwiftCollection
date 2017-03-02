@@ -20,6 +20,12 @@ import Foundation
 
 public struct SwiftCollection {
   
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Bundle
+   * -----------------------------------------------------------------------------------------------
+   */
+
   /// Bundle Id for this framework.
   public static let bundleId = "com.wyz.SwiftCollection"
 
@@ -33,5 +39,33 @@ public struct SwiftCollection {
     let version = info["CFBundleShortVersionString"] as! String
     return "\(name) v\(version)"
   }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Error
+   * -----------------------------------------------------------------------------------------------
+   */
   
+  /// Errors that can be thrown for `SwiftCollection`.
+  ///
+  /// - missingId: There is no `id` for a document.
+  /// - existingId:  A document with the `id` already exists in the collection.
+  /// - generateId: Unable to generate a new unique id.
+  /// - notFound: Object cannot be found.
+  public enum Errors: Error {
+    
+    /// There is no `id` for a document.
+    case missingId
+    
+    /// A document with the `id` already exists in the collection.
+    case existingId
+    
+    /// Unable to generate a new unique id.
+    case generateId
+    
+    /// Object cannot be found.
+    case notFound
+    
+  }
+
 }
