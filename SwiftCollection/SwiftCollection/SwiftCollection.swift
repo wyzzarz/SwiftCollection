@@ -52,6 +52,7 @@ public struct SwiftCollection {
   /// - existingId:  A document with the `id` already exists in the collection.
   /// - generateId: Unable to generate a new unique id.
   /// - notFound: Object cannot be found.
+  /// - invalidJson: Object can not be serialized to JSON.  Contains invalid properties.
   public enum Errors: Error {
     
     /// There is no `id` for a document.
@@ -65,6 +66,9 @@ public struct SwiftCollection {
     
     /// Object cannot be found.
     case notFound
+    
+    /// Object can not be serialized to/from JSON.  Contains invalid properties.
+    case invalidJson
     
   }
 
