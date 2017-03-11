@@ -70,6 +70,33 @@ public struct SwiftCollection {
     /// Object can not be serialized to/from JSON.  Contains invalid properties.
     case invalidJson
     
+    /// Missing key for JSON serialized object.
+    case missingJsonKey
+    
+  }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Functions
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  /// Unwraps optional values.  `NSNull` is substituted for `nil` values.
+  ///
+  /// - Parameter any: Object to unwrap.
+  /// - Returns: Original value if not optional, unwrapped value or `NSNull` when `nil`.
+  public static func unwrap(any: Any) -> Any {
+    let mirror = Mirror(reflecting: any)
+    
+    // return original if it is not optional
+    if mirror.displayStyle != .optional { return any }
+    
+    // handle nil optional
+    if mirror.children.count == 0 { return NSNull() }
+    
+    // otherwise return some value
+    let (_, some) = mirror.children.first!
+    return some
   }
 
 }

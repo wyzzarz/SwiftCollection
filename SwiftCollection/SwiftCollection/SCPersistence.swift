@@ -42,14 +42,37 @@ extension SwiftCollection {
   
 }
 
-/// Provides functions to serialize an object in JSON.  And to load an object from JSON.
+/// Generic collections cannot be processed directly.  This protocol adds support for collections
+/// to provide their own elements.
+public protocol SCJsonCollectionProtocol {
+  
+  /// Collections should return their enumerated elements as an array.
+  ///
+  /// - Returns: Array of elements for the collection.
+  func jsonCollectionElements() -> [Any]
+
+}
+
+/// Provides functions to serialize an object into JSON.  And to load an object from JSON.
 public protocol SCJsonProtocol {
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Initialize
+   * -----------------------------------------------------------------------------------------------
+   */
 
   /// Initializes an instance of this class from this JSON object.
   ///
   /// - Parameter json: JSON object to be loaded.  Must be either an Array or Dictionary.
   /// - Throws: `invalidJson` if the JSON object is not an Array or Dictionary.
   init(json: AnyObject) throws
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Serialize
+   * -----------------------------------------------------------------------------------------------
+   */
 
   /// Returns a foundation object that can be used to serialize JSON.  Must meet required
   /// JSON properties.
@@ -70,8 +93,21 @@ public protocol SCJsonProtocol {
   ///   - value: Value for property.
   /// - Returns: `newLabel` is the original or replacement label, `newValue` is the original or
   ///            replacement value.
-  func jsonObject(willSaveProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?)
+  func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?)
   
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Save
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  /// Returns key to be used when reading or writing a JSON serialized object to persistent storage.
+  ///
+  /// The name of this class is returned by default.
+  ///
+  /// - Returns: A key.
+  func jsonKey() -> String
+
   /// Returns a JSON serialized string for this object.  The `jsonObject` is used for
   /// serialization.
   ///
@@ -81,16 +117,69 @@ public protocol SCJsonProtocol {
   /// - Throws: `invalidJson` if the JSON object could not be serialized.
   func jsonString(options: JSONSerialization.WritingOptions) throws -> String
 
+  /// Saves this object as a JSON serialized string to the specified persistent storage.
+  ///
+  /// - Parameters:
+  ///   - storage: Persistent storage to be used.
+  ///   - completion: Called after the object has been saved.
+  /// - Throws:
+  ///   - `missingJsonKey` if there is no key to retrieve the serialized object.  See `jsonKey()`.
+  ///   - `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
+  func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Load
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  /// Loads this object from a JSON serialized string from the specified persistent storage.
+  ///
+  /// - Parameters:
+  ///   - storage: Persistent storage to be used.
+  ///   - completion: Called after the object has been loaded.
+  /// - Throws: `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
+  mutating func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws
+  
+  /// Loads this object from a JSON serialized string.
+  ///
+  /// - Parameter json: JSON serialized string to be loaded.
+  /// - Returns: JSON object.
+  /// - Throws: `invalidJson` if the JSON object is not an Array or Dictionary.
+  mutating func load(jsonString json: String) throws -> AnyObject?
+  
   /// Loads data from this JSON object.
   ///
-  /// - Parameter json: JSON object to be loaded
+  /// `load(propertyWithName, currentValue, json)` is called for each property of this object.
+  ///
+  /// Objects implementing this protocol should add logic in that function to populate the
+  /// properties of this object.
+  ///
+  /// - Parameter json: JSON object to be loaded.
+  /// - Returns: JSON object.
   /// - Throws: `invalidJson` if the JSON object is not an Array or Dictionary.
-  func load(json: AnyObject) throws
+  mutating func load(jsonObject json: AnyObject) throws -> AnyObject?
   
+  /// Objects implementing this protocol should add logic in this function to populate the
+  /// properties of this object.
+  ///
+  /// - Parameters:
+  ///   - name: Name of property.
+  ///   - currentValue: Current value of property.
+  ///   - potentialValue: Possible value from JSON object.
+  ///   - json: Complete JSON object with values to be loaded.
+  mutating func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject)
+
 }
 
 extension SCJsonProtocol {
   
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Initialize
+   * -----------------------------------------------------------------------------------------------
+   */
+
   /// Initializes an instance of this class.
   public init() {
     self.init()
@@ -98,7 +187,35 @@ extension SCJsonProtocol {
   
   public init(json: AnyObject) throws {
     self.init()
-    try load(json: json)
+    _ = try load(jsonObject: json)
+  }
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Serialize
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  /// Serializes a JSON array from a collection.
+  ///
+  /// - Parameter collection: Collection to be serialized.
+  /// - Returns: JSON serialized array.
+  fileprivate func _jsonCollection(collection: SCJsonCollectionProtocol) -> SwiftCollection.JsonArray? {
+    // return results as an array
+    var json: SwiftCollection.JsonArray = []
+    
+    // get elements for this collection
+    let elements = collection.jsonCollectionElements()
+    
+    // process each element in the array
+    for element in elements {
+      // serialize this element and add it to the array
+      if let jsonElement = _jsonObject(object: element) {
+        json.append(jsonElement)
+      }
+    }
+    
+    return json.count > 0 ? json : nil
   }
   
   /// Serializes a JSON array from an array.
@@ -175,15 +292,21 @@ extension SCJsonProtocol {
   ///
   /// Null and any unhandled object will be ignored.
   ///
-  /// To adjust or provide a value, update `jsonObject(willSaveProperty:,value:)`.
+  /// To adjust or provide a value, update `jsonObject(willSerializeProperty:,value:)`.
   ///
   /// - Parameter object: Object to be seralized.
   /// - Returns: A JSON serialized object.
   fileprivate func _jsonObject(object: Any) -> AnyObject? {
+    // unwrap any optional
+    let object = SwiftCollection.unwrap(any: object)
+    if object is NSNull { return nil }
+    
     // handle strings and numbers
     switch object {
     case _ as NSString: return object as AnyObject?
     case _ as NSNumber: return object as AnyObject?
+    case _ as Date: return (object as! Date).timeIntervalSince1970 as AnyObject?
+    case _ as SCJsonCollectionProtocol: return _jsonCollection(collection: object as! SCJsonCollectionProtocol) as AnyObject?
     default: break
     }
     
@@ -207,42 +330,58 @@ extension SCJsonProtocol {
     // otherwise, add the children to a dictionary
     var json: SwiftCollection.JsonDictionary = [:]
 
-    let willSaveProperty = { (label: String, value: Any) in
-      let (newLabel, newValue) = self.jsonObject(willSaveProperty: label, value: value)
+    // handle saving of key and value pairs to the json dictionary
+    let willSerializeProperty = { (label: String, value: Any) in
+      let (newLabel, newValue) = self.jsonObject(willSerializeProperty: label, value: value)
       guard newValue != nil && (newValue is NSString || newValue is NSNumber || newValue is NSArray || newValue is NSDictionary) else { return }
-      json[newLabel] = newValue
+      json[newLabel] = newValue!
     }
     
     for case let (label?, value) in mirror.children {
+      // unwrap optional values
+      let value = SwiftCollection.unwrap(any: value)
+
+      // process this value
       switch value {
       case let theValue as NSString:
         // store this string value
-        willSaveProperty(label, theValue)
+        willSerializeProperty(label, theValue)
       case let theValue as NSNumber:
         // store this numeric value
-        willSaveProperty(label, theValue)
+        willSerializeProperty(label, theValue)
+      case let theValue as Date:
+        // store this date
+        willSerializeProperty(label, theValue.timeIntervalSince1970)
       case _ as NSArray:
         // store this array
         if let arrayValue = _jsonArray(array: value as! NSArray) {
-          willSaveProperty(label, arrayValue)
+          willSerializeProperty(label, arrayValue)
         }
       case _ as NSDictionary:
         // store this dictionary
         if let dictValue = _jsonDictionary(dict: value as! NSDictionary) {
-          willSaveProperty(label, dictValue)
+          willSerializeProperty(label, dictValue)
         }
       case _ as NSSet:
         // store this set as an array
         if let arrayValue = _jsonArray(array: ((value as! NSSet).allObjects) as NSArray) {
-          willSaveProperty(label, arrayValue)
+          willSerializeProperty(label, arrayValue)
         }
       case _ as NSNull:
-        willSaveProperty(label, value)
+        willSerializeProperty(label, value)
       default:
-        // reflect further on this value
-        // includes: null, tuple, enum, struct, class, etc.
+        // handle objects conforming to this protocol
+        if let value = value as? SCJsonProtocol {
+          if let theValue = value.jsonObject() {
+            willSerializeProperty(label, theValue)
+            continue
+          }
+        }
+        
+        // otherwise reflect further on this value
+        // includes: tuple, enum, struct, class, etc.
         if let theValue = _jsonObject(object: value) {
-          willSaveProperty(label, theValue)
+          willSerializeProperty(label, theValue)
         }
       }
     }
@@ -250,7 +389,7 @@ extension SCJsonProtocol {
     return json as AnyObject?
   }
   
-  func jsonObject(willSaveProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?) {
+  public func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?) {
     return (label, value as AnyObject)
   }
 
@@ -267,8 +406,120 @@ extension SCJsonProtocol {
     return str
   }
   
-  public func load(json: AnyObject) throws {
-    guard json is NSArray || json is NSDictionary else { throw SwiftCollection.Errors.invalidJson }
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Save
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  public func jsonKey() -> String {
+    let key = String(describing: type(of: self))
+    return key
   }
   
+  /// Returns a key path to store this object.
+  ///
+  /// - Returns: A key path.
+  /// - Throws: `missingJsonKey` if there is no key to store the serialized object.  See `jsonKey()`.
+  fileprivate func storageKeyPath() throws -> String {
+    // get the key
+    let key = jsonKey()
+    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingJsonKey }
+    
+    // return the key with this framework's bundle id
+    return "\(SwiftCollection.bundleId).\(key)"
+  }
+
+  public func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
+    var success = false
+    
+    // get the key
+    let keyPath = try storageKeyPath()
+    
+    // get the JSON serialized string
+    let json = try jsonString(options: [])
+
+    // save to storage
+    switch storage {
+    case .userDefaults:
+      let ud = UserDefaults.standard
+      ud.set(json, forKey: keyPath)
+      ud.synchronize()
+      success = true
+    }
+
+    // done
+    if let completion = completion {
+      DispatchQueue.main.async {
+        completion(success)
+      }
+    }
+  }
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Load
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  public mutating func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws {
+    // get the key
+    let keyPath = try storageKeyPath()
+    var success = false
+    
+    // load serialized JSON from storage
+    let str: String?
+    switch storage {
+    case .userDefaults:
+      let ud = UserDefaults.standard
+      str = ud.string(forKey: keyPath)
+    }
+    
+    // get JSON object
+    var json: AnyObject?
+    if let str = str {
+      json = try load(jsonString: str)
+      success = json != nil
+    }
+    
+    // done
+    if let completion = completion {
+      DispatchQueue.main.async {
+        completion(success, json)
+      }
+    }
+  }
+
+  public mutating func load(jsonString json: String) throws -> AnyObject? {
+    if let data = json.data(using: .utf8) {
+      let obj = try JSONSerialization.jsonObject(with: data) as AnyObject
+      return try load(jsonObject: obj)
+    }
+    return nil
+  }
+  
+  public mutating func load(jsonObject json: AnyObject) throws -> AnyObject? {
+    // ensure this json is an array or dictionary
+    guard json is NSArray || json is NSDictionary else { throw SwiftCollection.Errors.invalidJson }
+    
+    // get mirror for reflection
+    let mirror = Mirror(reflecting: self)
+    
+    // check that we have children to process
+    guard mirror.children.count > 0 else { return json }
+    
+    // process each property
+    let dict = json as? NSDictionary
+    for case let (label?, value) in mirror.children {
+      let potentialValue = SwiftCollection.unwrap(any: dict?[label] ?? NSNull())
+      load(propertyWithName: label, currentValue: value, potentialValue: potentialValue, json: json)
+    }
+    
+    return json
+  }
+  
+  public mutating func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
+    // nothing to do
+  }
+
 }

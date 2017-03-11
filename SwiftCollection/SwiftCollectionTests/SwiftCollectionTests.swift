@@ -57,5 +57,14 @@ class SwiftCollectionTests: XCTestCase {
       i += 1
     }
   }
+  
+  func testUnwrap() {
+    let a = "string"
+    let b: String? = "string"
+    let c: String? = nil
+    XCTAssertEqual(SwiftCollection.unwrap(any: a) as! String, "string")
+    XCTAssertEqual(SwiftCollection.unwrap(any: b as Any) as! String, "string")
+    XCTAssertTrue(SwiftCollection.unwrap(any: c as Any) is NSNull)
+  }
 
 }
