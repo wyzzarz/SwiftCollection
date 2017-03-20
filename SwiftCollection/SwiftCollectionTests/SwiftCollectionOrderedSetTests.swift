@@ -1,5 +1,5 @@
 //
-//  SwiftCollectionTests+Array.swift
+//  SwiftCollectionOrderedSetTests.swift
 //
 //  Copyright 2017 Warner Zee
 //
@@ -19,7 +19,7 @@
 import XCTest
 @testable import SwiftCollection
 
-class SwiftCollectionArrayTests: XCTestCase {
+class SwiftCollectionOrderedSetTests: XCTestCase {
   
   // documents
   let docNone = SCDocument(id: 0x0)
@@ -27,14 +27,14 @@ class SwiftCollectionArrayTests: XCTestCase {
   let docB = SCDocument(id: 0xA)
   let docC = SCDocument(id: 0xF)
 
-  // arrays
-  var array1 = SCArray<SCDocument>()
-  var array2 = SCArray<SCDocument>()
+  // sets
+  var set1 = SCOrderedSet<SCDocument>()
+  var set2 = SCOrderedSet<SCDocument>()
 
   override func setUp() {
     super.setUp()
-    array1.removeAll()
-    array2.removeAll()
+    set1.removeAll()
+    set2.removeAll()
   }
   
   override func tearDown() {
@@ -48,11 +48,11 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
 
   func testCreateDocument() {
-    let doc1 = try! array1.createDocument()
+    let doc1 = try! set1.createDocument()
     XCTAssertNotNil(doc1)
     XCTAssertGreaterThan(doc1.id, 0)
-    XCTAssertThrowsError(try array1.createDocument(withId: doc1.id))
-    let doc2 = try! array1.createDocument(withId: 2)
+    XCTAssertThrowsError(try set1.createDocument(withId: doc1.id))
+    let doc2 = try! set1.createDocument(withId: 2)
     XCTAssertEqual(doc2.id, 2)
   }
   
@@ -63,11 +63,11 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
 
   func testId() {
-    try! array1.append(contentsOf: [docA, docB, docC])
-    XCTAssertEqual(array1.firstId, docA.id)
-    XCTAssertEqual(array1.id(after: array1.firstId), docB.id)
-    XCTAssertEqual(array1.id(before: array1.lastId), docB.id)
-    XCTAssertEqual(array1.lastId, docC.id)
+    try! set1.append(contentsOf: [docA, docB, docC])
+    XCTAssertEqual(set1.firstId, docA.id)
+    XCTAssertEqual(set1.id(after: set1.firstId), docB.id)
+    XCTAssertEqual(set1.id(before: set1.lastId), docB.id)
+    XCTAssertEqual(set1.lastId, docC.id)
   }
 
   /*
@@ -77,7 +77,7 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
   
   func testSequence() {
-    let arr = SCArray(arrayLiteral: docA, docB, docC)
+    let arr = SCOrderedSet(arrayLiteral: docA, docB, docC)
     XCTAssertEqual(arr.count, 3)
     for (i, e) in arr.enumerated() {
       switch i {
@@ -96,7 +96,7 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
 
   func testCollection() {
-    let arr = SCArray(arrayLiteral: docA, docB, docC)
+    let arr = SCOrderedSet(arrayLiteral: docA, docB, docC)
     XCTAssertEqual(arr[arr.startIndex], docA)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 2)], docC)
@@ -110,46 +110,46 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
   
   func testEmptyDocument() {
-    XCTAssertThrowsError(try array1.append(document: docNone))
+    XCTAssertThrowsError(try set1.append(document: docNone))
   }
 
   func testAppendDocument() {
-    try! array1.append(document: docA)
-    try! array1.append(document: docB)
-    XCTAssertEqual(array1.count, 2)
-    XCTAssertEqual(array1.first, docA)
-    XCTAssertEqual(array1.last, docB)
+    try! set1.append(document: docA)
+    try! set1.append(document: docB)
+    XCTAssertEqual(set1.count, 2)
+    XCTAssertEqual(set1.first, docA)
+    XCTAssertEqual(set1.last, docB)
   }
 
   func testAppendDocuments() {
-    try! array1.append(document: docA)
-    try! array1.append(contentsOf: [docB, docC])
-    XCTAssertEqual(array1.count, 3)
-    XCTAssertEqual(array1.first, docA)
-    XCTAssertEqual(array1[array1.index(array1.startIndex, offsetBy: 1)], docB)
-    XCTAssertEqual(array1.last, docC)
+    try! set1.append(document: docA)
+    try! set1.append(contentsOf: [docB, docC])
+    XCTAssertEqual(set1.count, 3)
+    XCTAssertEqual(set1.first, docA)
+    XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set1.last, docC)
   }
   
   func testInsertDocument() {
-    try! array1.insert(document: docC, at: 0)
-    try! array1.insert(document: docB, at: 0)
-    try! array1.insert(document: docA, at: 0)
-    XCTAssertEqual(array1.count, 3)
-    XCTAssertEqual(array1.first, docA)
-    XCTAssertEqual(array1[array1.index(array1.startIndex, offsetBy: 1)], docB)
-    XCTAssertEqual(array1.last, docC)
+    try! set1.insert(document: docC, at: 0)
+    try! set1.insert(document: docB, at: 0)
+    try! set1.insert(document: docA, at: 0)
+    XCTAssertEqual(set1.count, 3)
+    XCTAssertEqual(set1.first, docA)
+    XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set1.last, docC)
   }
   
   func testInsertDocuments() {
-    try! array1.insert(document: docC, at: 0)
-    try! array2.insert(document: docB, at: 0)
-    try! array2.insert(document: docA, at: 0)
-    try! array1.insert(contentsOf: array2, at: 0)
-    XCTAssertEqual(array1.count, 3)
-    XCTAssertEqual(array2.count, 2)
-    XCTAssertEqual(array1.first, docA)
-    XCTAssertEqual(array1[array1.index(array1.startIndex, offsetBy: 1)], docB)
-    XCTAssertEqual(array1.last, docC)
+    try! set1.insert(document: docC, at: 0)
+    try! set2.insert(document: docB, at: 0)
+    try! set2.insert(document: docA, at: 0)
+    try! set1.insert(contentsOf: set2, at: 0)
+    XCTAssertEqual(set1.count, 3)
+    XCTAssertEqual(set2.count, 2)
+    XCTAssertEqual(set1.first, docA)
+    XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set1.last, docC)
   }
   
   /*
@@ -159,25 +159,25 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
   
   func testRemoveDocument() {
-    let array = try! SCArray<SCDocument>([docA, docB, docC])
-    XCTAssertEqual(array.count, 3)
-    array.remove(document: docB)
-    XCTAssertEqual(array.count, 2)
+    let set = try! SCOrderedSet<SCDocument>([docA, docB, docC])
+    XCTAssertEqual(set.count, 3)
+    set.remove(document: docB)
+    XCTAssertEqual(set.count, 2)
   }
 
   func testRemoveDocuments() {
-    let array = try! SCArray<SCDocument>([docA, docB, docC])
-    XCTAssertEqual(array.count, 3)
-    array.remove(contentsOf: [docA, docC])
-    XCTAssertEqual(array.count, 1)
-    XCTAssertEqual(array.last, docB)
+    let set = try! SCOrderedSet<SCDocument>([docA, docB, docC])
+    XCTAssertEqual(set.count, 3)
+    set.remove(contentsOf: [docA, docC])
+    XCTAssertEqual(set.count, 1)
+    XCTAssertEqual(set.last, docB)
   }
 
   func testRemoveAllDocuments() {
-    let array = try! SCArray<SCDocument>([docA, docB, docC])
-    XCTAssertEqual(array.count, 3)
-    array.removeAll()
-    XCTAssertEqual(array.count, 0)
+    let set = try! SCOrderedSet<SCDocument>([docA, docB, docC])
+    XCTAssertEqual(set.count, 3)
+    set.removeAll()
+    XCTAssertEqual(set.count, 0)
   }
 
 }

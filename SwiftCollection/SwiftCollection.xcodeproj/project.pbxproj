@@ -16,9 +16,9 @@
 		99DDA6761E66731000F99C3F /* SwiftCollection.h in Headers */ = {isa = PBXBuildFile; fileRef = 99DDA6681E66731000F99C3F /* SwiftCollection.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		99DDA6AE1E669EFB00F99C3F /* SwiftCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6AD1E669EFB00F99C3F /* SwiftCollection.swift */; };
 		99DDA6B31E66A6EE00F99C3F /* SCDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B21E66A6EE00F99C3F /* SCDocument.swift */; };
-		99DDA6B51E66A7D000F99C3F /* SCArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B41E66A7D000F99C3F /* SCArray.swift */; };
+		99DDA6B51E66A7D000F99C3F /* SCOrderedSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B41E66A7D000F99C3F /* SCOrderedSet.swift */; };
 		99DDA6B71E66B36600F99C3F /* SwiftCollectionDocumentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B61E66B36600F99C3F /* SwiftCollectionDocumentTests.swift */; };
-		99DDA6B91E66B39E00F99C3F /* SwiftCollectionArrayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B81E66B39E00F99C3F /* SwiftCollectionArrayTests.swift */; };
+		99DDA6B91E66B39E00F99C3F /* SwiftCollectionOrderedSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DDA6B81E66B39E00F99C3F /* SwiftCollectionOrderedSetTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,9 +45,9 @@
 		99DDA6AB1E669C1E00F99C3F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		99DDA6AD1E669EFB00F99C3F /* SwiftCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftCollection.swift; sourceTree = "<group>"; };
 		99DDA6B21E66A6EE00F99C3F /* SCDocument.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SCDocument.swift; sourceTree = "<group>"; };
-		99DDA6B41E66A7D000F99C3F /* SCArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SCArray.swift; sourceTree = "<group>"; };
+		99DDA6B41E66A7D000F99C3F /* SCOrderedSet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SCOrderedSet.swift; sourceTree = "<group>"; };
 		99DDA6B61E66B36600F99C3F /* SwiftCollectionDocumentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftCollectionDocumentTests.swift; sourceTree = "<group>"; };
-		99DDA6B81E66B39E00F99C3F /* SwiftCollectionArrayTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftCollectionArrayTests.swift; sourceTree = "<group>"; };
+		99DDA6B81E66B39E00F99C3F /* SwiftCollectionOrderedSetTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftCollectionOrderedSetTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,7 +97,7 @@
 				99CAA2B51E6BA91700250DD4 /* SCPersistence.swift */,
 				99CAA2B71E6BAA6400250DD4 /* SCDocumentId.swift */,
 				99DDA6B21E66A6EE00F99C3F /* SCDocument.swift */,
-				99DDA6B41E66A7D000F99C3F /* SCArray.swift */,
+				99DDA6B41E66A7D000F99C3F /* SCOrderedSet.swift */,
 			);
 			path = SwiftCollection;
 			sourceTree = "<group>";
@@ -108,7 +108,7 @@
 				99DDA6731E66731000F99C3F /* SwiftCollectionTests.swift */,
 				99CAA2BB1E6CF1E300250DD4 /* SwiftCollectionPersistenceTests.swift */,
 				99DDA6B61E66B36600F99C3F /* SwiftCollectionDocumentTests.swift */,
-				99DDA6B81E66B39E00F99C3F /* SwiftCollectionArrayTests.swift */,
+				99DDA6B81E66B39E00F99C3F /* SwiftCollectionOrderedSetTests.swift */,
 			);
 			path = SwiftCollectionTests;
 			sourceTree = "<group>";
@@ -238,7 +238,7 @@
 				99CAA2B81E6BAA6400250DD4 /* SCDocumentId.swift in Sources */,
 				99DDA6B31E66A6EE00F99C3F /* SCDocument.swift in Sources */,
 				99CAA2B61E6BA91700250DD4 /* SCPersistence.swift in Sources */,
-				99DDA6B51E66A7D000F99C3F /* SCArray.swift in Sources */,
+				99DDA6B51E66A7D000F99C3F /* SCOrderedSet.swift in Sources */,
 				99DDA6AE1E669EFB00F99C3F /* SwiftCollection.swift in Sources */,
 				99CAA2BA1E6BAECB00250DD4 /* SCExtensions.swift in Sources */,
 			);
@@ -250,7 +250,7 @@
 			files = (
 				99DDA6B71E66B36600F99C3F /* SwiftCollectionDocumentTests.swift in Sources */,
 				99CAA2BC1E6CF1E300250DD4 /* SwiftCollectionPersistenceTests.swift in Sources */,
-				99DDA6B91E66B39E00F99C3F /* SwiftCollectionArrayTests.swift in Sources */,
+				99DDA6B91E66B39E00F99C3F /* SwiftCollectionOrderedSetTests.swift in Sources */,
 				99DDA6741E66731000F99C3F /* SwiftCollectionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

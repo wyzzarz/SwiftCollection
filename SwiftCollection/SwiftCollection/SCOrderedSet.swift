@@ -1,5 +1,5 @@
 //
-//  SCArray.swift
+//  SCOrderedSet.swift
 //
 //  Copyright 2017 Warner Zee
 //
@@ -18,30 +18,30 @@
 
 import Foundation
 
-/// `SCArray` holds document objects conforming to `SCDocumentProtocol`.
+/// `SCOrderedSet` holds document objects conforming to `SCDocumentProtocol`.
 ///
 /// Documents added to this collection include a primary key.
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
-public class SCArray<Element: SCDocumentProtocol>: ExpressibleByArrayLiteral {
+public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLiteral {
 
   // Holds an array of elements.
   fileprivate var elements: [Element] = []
 
-  // Holds an array of ids that corresponds to each element in elements.
+  // Holds a set of ids that corresponds to each element in elements.
   fileprivate var ids = NSMutableOrderedSet()
  
   // Temporarily holds a set of ids for elements that have been created, but have not been added to 
   // elements.
   fileprivate var createdIds: Set<SwiftCollection.Id> = []
 
-  /// Creates an instance of `SCArray`.
+  /// Creates an instance of `SCOrderedSet`.
   public init() {
     // nothing to do
   }
   
-  /// Creates an instance of `SCArray` populated by documents in the collection.
+  /// Creates an instance of `SCOrderedSet` populated by documents in the collection.
   ///
   /// - Parameter collection: Documents to be added.
   /// - Throws: `missingId` if a document has no id.
@@ -260,7 +260,7 @@ public class SCArray<Element: SCDocumentProtocol>: ExpressibleByArrayLiteral {
 
 }
 
-extension SCArray: CustomStringConvertible {
+extension SCOrderedSet: CustomStringConvertible {
   
   public var description: String {
     return String(describing: ids)
@@ -274,7 +274,7 @@ extension SCArray: CustomStringConvertible {
  * -----------------------------------------------------------------------------------------------
  */
 
-extension SCArray: Sequence {
+extension SCOrderedSet: Sequence {
 
   public typealias Iterator = AnyIterator<Element>
   
@@ -290,7 +290,7 @@ extension SCArray: Sequence {
  * -----------------------------------------------------------------------------------------------
  */
 
-public struct SCArrayIndex<Element: Hashable>: Comparable {
+public struct SCOrderedSetIndex<Element: Hashable>: Comparable {
   
   fileprivate let index: Int
   
@@ -298,26 +298,26 @@ public struct SCArrayIndex<Element: Hashable>: Comparable {
     self.index = index
   }
   
-  public static func == (lhs: SCArrayIndex, rhs: SCArrayIndex) -> Bool {
+  public static func == (lhs: SCOrderedSetIndex, rhs: SCOrderedSetIndex) -> Bool {
     return lhs.index == rhs.index
   }
   
-  public static func < (lhs: SCArrayIndex, rhs: SCArrayIndex) -> Bool {
+  public static func < (lhs: SCOrderedSetIndex, rhs: SCOrderedSetIndex) -> Bool {
     return lhs.index < rhs.index
   }
   
 }
 
-extension SCArray: BidirectionalCollection {
+extension SCOrderedSet: BidirectionalCollection {
 
-  public typealias Index = SCArrayIndex<Element>
+  public typealias Index = SCOrderedSetIndex<Element>
   
   public var startIndex: Index {
-    return SCArrayIndex(elements.startIndex)
+    return SCOrderedSetIndex(elements.startIndex)
   }
   
   public var endIndex: Index {
-    return SCArrayIndex(elements.endIndex)
+    return SCOrderedSetIndex(elements.endIndex)
   }
   
   public func index(after i: Index) -> Index {
