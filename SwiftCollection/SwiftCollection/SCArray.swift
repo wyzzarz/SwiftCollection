@@ -24,19 +24,18 @@ import Foundation
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
-public struct SCArray<Element: SCDocumentProtocol> {
+public class SCArray<Element: SCDocumentProtocol>: ExpressibleByArrayLiteral {
 
   // Holds an array of elements.
   fileprivate var elements: [Element] = []
 
   // Holds an array of ids that corresponds to each element in elements.
-  fileprivate var ids: [SwiftCollection.Id] = []
+  fileprivate var ids = NSMutableOrderedSet()
  
   // Temporarily holds a set of ids for elements that have been created, but have not been added to 
   // elements.
   fileprivate var createdIds: Set<SwiftCollection.Id> = []
 
-  
   /// Creates an instance of `SCArray`.
   public init() {
     // nothing to do
@@ -51,7 +50,12 @@ public struct SCArray<Element: SCDocumentProtocol> {
       try append(document: element)
     }
   }
-  
+
+  public required convenience init(arrayLiteral elements: Element...) {
+    self.init()
+    try? append(contentsOf: elements)
+  }
+
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Document
@@ -67,8 +71,8 @@ public struct SCArray<Element: SCDocumentProtocol> {
   /// - Parameter id: Optional id to be applied to the document.
   /// - Returns: A document that can be added to the collection.
   /// - Throws: `existingId` if a document has no id.  `generateId` if an id could not be generated.
-  public mutating func createDocument(withId id: SwiftCollection.Id? = nil) throws -> Element {
-    let existing = Set<SwiftCollection.Id>(ids).union(Set<SwiftCollection.Id>(createdIds))
+  public func createDocument(withId id: SwiftCollection.Id? = nil) throws -> Element {
+    let existing = createdIds.union(ids.set as! Set<SwiftCollection.Id>)
     var theId = id
     if theId != nil {
       // check if this id already exists
@@ -111,29 +115,40 @@ public struct SCArray<Element: SCDocumentProtocol> {
   /// - Returns: A document with the specified id.
   public func document(withId id: SwiftCollection.Id?) -> Element? {
     guard let id = id else { return nil }
-    guard let i = ids.index(of: id) else { return nil }
-    return elements[i]
+    let i = ids.index(of: id)
+    return i == NSNotFound ? nil : elements[i]
   }
   
   /// Returns the first document id in the collection.
   public var firstId: SwiftCollection.Id? {
-    return ids.first
+    return ids.firstObject as? SwiftCollection.Id
   }
   
   /// Returns the last document id in the collection.
   public var lastId: SwiftCollection.Id? {
-    return ids.last
+    return ids.lastObject as? SwiftCollection.Id
   }
-  
+
+  /// The document id in the collection offset from the specified id.
+  ///
+  /// - Parameters:
+  ///   - id: `id` of document to be located.
+  ///   - offset: Distance from the specified id.
+  /// - Returns: `id` of the document.  Or `nil` if the offset is out of bounds.
+  public func id(id: SwiftCollection.Id?, offset: Int) -> SwiftCollection.Id? {
+    guard let id = id else { return nil }
+    let i = ids.index(of: id)
+    if i == NSNotFound { return nil }
+    let ni = i + offset
+    return ni >= 0 && ni < ids.count ? ids[ni] as? SwiftCollection.Id : nil
+  }
+
   /// The next document id in the collection after the specified id.
   ///
   /// - Parameter id: `id` of document to be located.
   /// - Returns: `id` of next document.  Or `nil` if this is the last document.
   public func id(after id: SwiftCollection.Id?) -> SwiftCollection.Id? {
-    guard let id = id else { return nil }
-    guard let i = ids.index(of: id) else { return nil }
-    let ni = ids.index(after: i)
-    return ni < ids.count ? ids[ni] : nil
+    return self.id(id: id, offset: +1)
   }
 
   /// The previous document id in the collection before the specified id.
@@ -141,10 +156,7 @@ public struct SCArray<Element: SCDocumentProtocol> {
   /// - Parameter id: `id` of document to be located.
   /// - Returns: `id` of previous document.  Or `nil` if this is the first document.
   public func id(before id: SwiftCollection.Id?) -> SwiftCollection.Id? {
-    guard let id = id else { return nil }
-    guard let i = ids.index(of: id) else { return nil }
-    let pi = ids.index(before: i)
-    return pi >= 0 ? ids[pi] : nil
+    return self.id(id: id, offset: -1)
   }
 
   /*
@@ -159,7 +171,7 @@ public struct SCArray<Element: SCDocumentProtocol> {
   ///   - document: Document to be added.
   ///   - i: Position to insert the document.  `i` must be a valid index into the collection.
   /// - Throws: `missingId` if the document has no id.
-  mutating func insert(document: Element, at i: Int) throws {
+  func insert(document: Element, at i: Int) throws {
     // ensure the document has an id
     guard document.hasId() else { throw SwiftCollection.Errors.missingId }
     guard !ids.contains(document.id) else { return }
@@ -174,26 +186,24 @@ public struct SCArray<Element: SCDocumentProtocol> {
   ///   - newDocuments: Documents to be added.
   ///   - i: Position to insert the documents.  `i` must be a valid index into the collection.
   /// - Throws: `missingId` if a document has no id.
-  mutating func insert<C : Collection>(contentsOf newDocuments: C, at i: Int) throws where C.Iterator.Element == Element {
+  func insert<C : Collection>(contentsOf newDocuments: C, at i: Int) throws where C.Iterator.Element == Element {
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
-    ids.reserveCapacity(newTotal)
     for d in newDocuments.reversed() {
       try self.insert(document: d, at: i)
     }
   }
-
   
   /// Adds the document to the end of the collection.
   ///
   /// - Parameter document: Document to be added.
   /// - Throws: `missingId` if the document has no id.
-  public mutating func append(document: Element) throws {
+  public func append(document: Element) throws {
     // ensure the document has an id
     guard document.hasId() else { throw SwiftCollection.Errors.missingId }
     guard !ids.contains(document.id) else { return }
     elements.append(document)
-    ids.append(document.id)
+    ids.add(document.id)
     createdIds.remove(document.id)
   }
   
@@ -201,10 +211,9 @@ public struct SCArray<Element: SCDocumentProtocol> {
   ///
   /// - Parameter newDocuments: A collection of documents to be added.
   /// - Throws: `missingId` if a document has no id.
-  public mutating func append<C : Collection>(contentsOf newDocuments: C) throws where C.Iterator.Element == Element {
+  public func append<C : Collection>(contentsOf newDocuments: C) throws where C.Iterator.Element == Element {
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
-    ids.reserveCapacity(newTotal)
     for d in newDocuments {
       if ids.contains(d.id) { continue }
       try self.append(document: d)
@@ -220,7 +229,7 @@ public struct SCArray<Element: SCDocumentProtocol> {
   /// Removes the document from the collection.
   ///
   /// - Parameter document: Document to be removed.
-  public mutating func remove(document: Element) {
+  public func remove(document: Element) {
     if let i = index(of: document) {
       elements.remove(at: i.index)
       ids.remove(at: i.index)
@@ -232,7 +241,7 @@ public struct SCArray<Element: SCDocumentProtocol> {
   ///
   /// - Parameter newDocuments: A collection of documents to be removed.
   /// - Throws: `missingId` if a document has no id.
-  public mutating func remove<C : Collection>(contentsOf newDocuments: C) where C.Iterator.Element == Element {
+  public func remove<C : Collection>(contentsOf newDocuments: C) where C.Iterator.Element == Element {
     for d in newDocuments {
       if let i = index(of: d) {
         elements.remove(at: i.index)
@@ -243,9 +252,9 @@ public struct SCArray<Element: SCDocumentProtocol> {
   }
 
   /// Removes all documents from the collection.
-  public mutating func removeAll() {
+  public func removeAll() {
     elements.removeAll()
-    ids.removeAll()
+    ids.removeAllObjects()
     createdIds.removeAll()
   }
 
@@ -255,15 +264,6 @@ extension SCArray: CustomStringConvertible {
   
   public var description: String {
     return String(describing: ids)
-  }
-  
-}
-
-extension SCArray: ExpressibleByArrayLiteral {
-
-  public init(arrayLiteral elements: Element...) {
-    self.init()
-    try? append(contentsOf: elements)
   }
   
 }

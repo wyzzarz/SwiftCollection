@@ -64,12 +64,17 @@ extension SCDocumentProtocol {
 /// The goal of `SCDocument` is to provide a document holder for use in collections and
 /// provide a primary key, sorting and storage to and retrieval from a persistence store.
 ///
-public struct SCDocument {
+public class SCDocument {
 
   fileprivate var _id: SwiftCollection.Id = 0
   
   fileprivate init() {
     // nothing to do
+  }
+
+  public required convenience init(id: SwiftCollection.Id) {
+    self.init()
+    _id = id
   }
 
 }
@@ -78,10 +83,6 @@ extension SCDocument: SCDocumentProtocol {
 
   public var id: SwiftCollection.Id {
     return _id
-  }
-  
-  public init(id: SwiftCollection.Id) {
-    _id = id
   }
   
   public var hashValue: Int {

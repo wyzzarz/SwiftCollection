@@ -159,14 +159,14 @@ class SwiftCollectionArrayTests: XCTestCase {
    */
   
   func testRemoveDocument() {
-    var array = try! SCArray<SCDocument>([docA, docB, docC])
+    let array = try! SCArray<SCDocument>([docA, docB, docC])
     XCTAssertEqual(array.count, 3)
     array.remove(document: docB)
     XCTAssertEqual(array.count, 2)
   }
 
   func testRemoveDocuments() {
-    var array = try! SCArray<SCDocument>([docA, docB, docC])
+    let array = try! SCArray<SCDocument>([docA, docB, docC])
     XCTAssertEqual(array.count, 3)
     array.remove(contentsOf: [docA, docC])
     XCTAssertEqual(array.count, 1)
@@ -174,7 +174,7 @@ class SwiftCollectionArrayTests: XCTestCase {
   }
 
   func testRemoveAllDocuments() {
-    var array = try! SCArray<SCDocument>([docA, docB, docC])
+    let array = try! SCArray<SCDocument>([docA, docB, docC])
     XCTAssertEqual(array.count, 3)
     array.removeAll()
     XCTAssertEqual(array.count, 0)
