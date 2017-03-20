@@ -66,9 +66,15 @@ extension SCDocumentProtocol {
 ///
 public class SCDocument {
 
+  public struct Keys {
+    
+    public static let id = "_id"
+    
+  }
+  
   fileprivate var _id: SwiftCollection.Id = 0
   
-  fileprivate init() {
+  public required init() {
     // nothing to do
   }
 
@@ -101,4 +107,15 @@ extension SCDocument: CustomStringConvertible {
     return String(describing: "SCDocument(\(_id))")
   }
   
+}
+
+extension SCDocument: SCJsonProtocol {
+
+  public func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
+    switch name {
+    case Keys.id: if let id = (json as? [String: Any])?[Keys.id] as? SwiftCollection.Id { _id = id }
+    default: break
+    }
+  }
+
 }

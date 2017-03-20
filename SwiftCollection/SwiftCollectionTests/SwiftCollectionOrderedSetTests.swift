@@ -26,10 +26,21 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   let docA = SCDocument(id: 0x1)
   let docB = SCDocument(id: 0xA)
   let docC = SCDocument(id: 0xF)
+  let docD = SCDocument(id: 0xFF)
 
   // sets
-  var set1 = SCOrderedSet<SCDocument>()
-  var set2 = SCOrderedSet<SCDocument>()
+  class PersistedSet: SCOrderedSet<SCDocument>, SCJsonProtocol {
+    public func load(jsonObject json: AnyObject) throws -> AnyObject? {
+      if let array = json as? [AnyObject] {
+        for item in array {
+          try? append(document: SCDocument(json: item))
+        }
+      }
+      return json
+    }
+  }
+  var set1 = PersistedSet()
+  var set2 = PersistedSet()
 
   override func setUp() {
     super.setUp()
@@ -68,8 +79,15 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set1.id(after: set1.firstId), docB.id)
     XCTAssertEqual(set1.id(before: set1.lastId), docB.id)
     XCTAssertEqual(set1.lastId, docC.id)
+    
   }
 
+  func testContainsId() {
+    try! set1.append(contentsOf: [docA, docB, docC])
+    XCTAssertTrue(set1.contains(id: docA.id))
+    XCTAssertFalse(set1.contains(id: docD.id))
+  }
+  
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Sequence
@@ -77,7 +95,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
   
   func testSequence() {
-    let arr = SCOrderedSet(arrayLiteral: docA, docB, docC)
+    let arr = try! SCOrderedSet([docA, docB, docC])
     XCTAssertEqual(arr.count, 3)
     for (i, e) in arr.enumerated() {
       switch i {
@@ -96,7 +114,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
 
   func testCollection() {
-    let arr = SCOrderedSet(arrayLiteral: docA, docB, docC)
+    let arr = try! SCOrderedSet([docA, docB, docC])
     XCTAssertEqual(arr[arr.startIndex], docA)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 2)], docC)
@@ -178,6 +196,78 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set.count, 3)
     set.removeAll()
     XCTAssertEqual(set.count, 0)
+  }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Combine
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  func testUnion() {
+    try! set1.append(contentsOf: [docA, docB, docC])
+    try! set2.append(contentsOf: [docC, docD])
+    let set = try! set1.union(set2)
+    XCTAssertEqual(set.count, 4)
+    XCTAssertEqual(set.first, docA)
+    XCTAssertEqual(set.last, docD)
+  }
+
+  func testInterset() {
+    try! set1.append(contentsOf: [docA, docB, docC])
+    try! set2.append(contentsOf: [docC, docB, docD])
+    set1.intersect(set2)
+    XCTAssertEqual(set1.count, 2)
+    XCTAssertEqual(set1.first, docB)
+    XCTAssertEqual(set1.last, docC)
+  }
+
+  func testMinus() {
+    try! set1.append(contentsOf: [docA, docB, docC])
+    try! set2.append(contentsOf: [docC, docD])
+    set1.minus(set2)
+    XCTAssertEqual(set1.count, 2)
+    XCTAssertEqual(set1.first, docA)
+    XCTAssertEqual(set1.last, docB)
+  }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Persistence
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  func testPersistence() {
+    // create expectations
+    let se = expectation(description: "Save Failed.")
+    let le = self.expectation(description: "Load Failed.")
+    
+    try! set1.append(contentsOf: [docA, docB, docC])
+    
+    let load = {
+      XCTAssertEqual(self.set2.count, 0)
+      try! self.set2.load(jsonStorage: .userDefaults, completion: { (success, json) in
+        le.fulfill()
+        XCTAssertEqual(self.set2.count, 3)
+        XCTAssertEqual(self.set2.first, self.docA)
+        XCTAssertEqual(self.set2.last, self.docC)
+      })
+    }
+    
+    try! set1.save(jsonStorage: .userDefaults) { (success) in
+      se.fulfill()
+      XCTAssertTrue(success)
+      if (success) {
+        load()
+      }
+    }
+    
+    // wait for save and load
+    waitForExpectations(timeout: 60) { (error) in
+      if let error = error {
+        XCTFail("Save Failed: \(error.localizedDescription)")
+      }
+    }
   }
 
 }

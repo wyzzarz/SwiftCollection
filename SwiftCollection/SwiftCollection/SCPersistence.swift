@@ -62,6 +62,8 @@ public protocol SCJsonProtocol {
    * -----------------------------------------------------------------------------------------------
    */
 
+  init()
+  
   /// Initializes an instance of this class from this JSON object.
   ///
   /// - Parameter json: JSON object to be loaded.  Must be either an Array or Dictionary.
@@ -180,11 +182,6 @@ extension SCJsonProtocol {
    * -----------------------------------------------------------------------------------------------
    */
 
-  /// Initializes an instance of this class.
-  public init() {
-    self.init()
-  }
-  
   public init(json: AnyObject) throws {
     self.init()
     _ = try load(jsonObject: json)

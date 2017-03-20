@@ -28,6 +28,12 @@ class SwiftCollectionDocumentTests: XCTestCase {
   override func tearDown() {
     super.tearDown()
   }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Document
+   * -----------------------------------------------------------------------------------------------
+   */
   
   func testGuid() {
     XCTAssertEqual(SCDocument(id: 0x1).guid, "0000-0000-0000-0001")
@@ -36,6 +42,43 @@ class SwiftCollectionDocumentTests: XCTestCase {
     XCTAssertEqual(SCDocument(id: 0x1000000000000).guid, "0001-0000-0000-0000")
     XCTAssertEqual(SCDocument(id: UInt.max).guid, "FFFF-FFFF-FFFF-FFFF")
     XCTAssertEqual(SCDocument(id: 0x1234567890abcdef).guid, "1234-5678-90AB-CDEF")
+  }
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Persistence
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  func testPersistence() {
+    // create expectations
+    let se = expectation(description: "Save Failed.")
+    let le = self.expectation(description: "Load Failed.")
+
+    let doc = SCDocument(id: 0x10000)
+    
+    let load = {
+      var loaded = SCDocument()
+      try! loaded.load(jsonStorage: .userDefaults, completion: { (success, json) in
+        le.fulfill()
+        XCTAssertEqual(doc.id, loaded.id)
+      })
+    }
+    
+    try! doc.save(jsonStorage: .userDefaults) { (success) in
+      se.fulfill()
+      XCTAssertTrue(success)
+      if (success) {
+        load()
+      }
+    }
+    
+    // wait for save and load
+    waitForExpectations(timeout: 60) { (error) in
+      if let error = error {
+        XCTFail("Save Failed: \(error.localizedDescription)")
+      }
+    }
   }
   
 }

@@ -24,7 +24,7 @@ import Foundation
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
-public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLiteral {
+public class SCOrderedSet<Element: SCDocumentProtocol> {
 
   // Holds an array of elements.
   fileprivate var elements: [Element] = []
@@ -37,7 +37,7 @@ public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLitera
   fileprivate var createdIds: Set<SwiftCollection.Id> = []
 
   /// Creates an instance of `SCOrderedSet`.
-  public init() {
+  public required init() {
     // nothing to do
   }
   
@@ -51,9 +51,14 @@ public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLitera
     }
   }
 
-  public required convenience init(arrayLiteral elements: Element...) {
-    self.init()
-    try? append(contentsOf: elements)
+  /// Creates an instance of `SCOrderedSet` populated by documents in the array.
+  ///
+  /// - Parameter array: Documents to be added.
+  /// - Throws: `missingId` if a document has no id.
+  public init<S: Sequence>(_ sequence: S) throws where S.Iterator.Element == Element {
+    for element in sequence {
+      try append(document: element)
+    }
   }
 
   /*
@@ -128,7 +133,15 @@ public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLitera
   public var lastId: SwiftCollection.Id? {
     return ids.lastObject as? SwiftCollection.Id
   }
-
+  
+  /// Checks whether the document id exists in this set.
+  ///
+  /// - Parameter id: `id` of document to be located.
+  /// - Returns: `true` if the document id exists; `false` otherwise.
+  public func contains(id: SwiftCollection.Id) -> Bool {
+    return ids.index(of: id) != NSNotFound
+  }
+  
   /// The document id in the collection offset from the specified id.
   ///
   /// - Parameters:
@@ -257,6 +270,57 @@ public class SCOrderedSet<Element: SCDocumentProtocol>: ExpressibleByArrayLitera
     ids.removeAllObjects()
     createdIds.removeAll()
   }
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Combine
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  /// Returns a new set that is a combination of this set and the other set.
+  ///
+  /// - Parameter other: Other set to combine.
+  /// - Returns: A new set with unique elements from both sets.
+  /// - Throws: `missingId` if the document has no id.
+  public func union(_ other: SCOrderedSet<Element>) throws -> SCOrderedSet<Element> {
+    let set = self
+    for (_, element) in other.enumerated() {
+      if !set.contains(element) { try set.append(document: element) }
+    }
+    return set
+  }
+
+  /// Removes any element in this set that is not present in the other set.
+  ///
+  /// - Parameter other: Other set to perform the intersection.
+  public func intersect(_ other: SCOrderedSet<Element>) {
+    var i = 0
+    while i < elements.count {
+      let element = elements[i]
+      if !other.contains(element) {
+        elements.remove(at: i)
+        ids.removeObject(at: i)
+      } else {
+        i += 1
+      }
+    }
+  }
+
+  /// Removes any element in this set that is present in the other set.
+  ///
+  /// - Parameter other: Other set to perform the subtraction.
+  public func minus(_ other: SCOrderedSet<Element>) {
+    var i = 0
+    while i < elements.count {
+      let element = elements[i]
+      if other.contains(element) {
+        elements.remove(at: i)
+        ids.removeObject(at: i)
+      } else {
+        i += 1
+      }
+    }
+  }
 
 }
 
@@ -332,4 +396,18 @@ extension SCOrderedSet: BidirectionalCollection {
     return elements[position.index]
   }
   
+}
+
+/*
+ * -----------------------------------------------------------------------------------------------
+ * MARK: - Persistence
+ * -----------------------------------------------------------------------------------------------
+ */
+
+extension SCOrderedSet: SCJsonCollectionProtocol {
+  
+  public func jsonCollectionElements() -> [Any] {
+    return elements
+  }
+
 }

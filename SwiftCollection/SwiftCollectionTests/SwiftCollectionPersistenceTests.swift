@@ -146,6 +146,9 @@ extension SwiftCollectionPersistenceTests {
     var anotherStruct: AnotherStruct?
     var anotherClass: AnotherClass?
     
+    init() {
+    }
+    
     init(defaults: Bool = false) {
       if defaults {
         str = KeyValues.str.value as? String
@@ -381,6 +384,9 @@ extension SwiftCollectionPersistenceTests {
     var a: Int?
     var b: Int?
     
+    init() {
+    }
+    
     init(defaults: Bool = false) {
       if defaults {
         a = 1
@@ -403,6 +409,9 @@ extension SwiftCollectionPersistenceTests {
     var c: Int?
     var d: Int?
     var struct1: Struct1?
+    
+    required init() {
+    }
     
     init(defaults: Bool = false) {
       if defaults {
@@ -502,7 +511,6 @@ extension SwiftCollectionPersistenceTests {
       }
     }
     
-    
   }
 
 }
@@ -537,6 +545,9 @@ fileprivate class SimpleCollection<Element: Hashable>: Collection {
   typealias Index = SimpleCollectionIndex<Element>
 
   var elements: [Element] = []
+  
+  required init() {
+  }
   
   func add(element: Element) {
     elements.append(element)
