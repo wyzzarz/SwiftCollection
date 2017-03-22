@@ -64,7 +64,7 @@ extension SCDocumentProtocol {
 /// The goal of `SCDocument` is to provide a document holder for use in collections and
 /// provide a primary key, sorting and storage to and retrieval from a persistence store.
 ///
-public class SCDocument {
+open class SCDocument: SCJsonProtocol {
 
   public struct Keys {
     
@@ -81,6 +81,13 @@ public class SCDocument {
   public required convenience init(id: SwiftCollection.Id) {
     self.init()
     _id = id
+  }
+
+  open func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
+    switch name {
+    case Keys.id: if let id = (json as? [String: Any])?[Keys.id] as? SwiftCollection.Id { _id = id }
+    default: break
+    }
   }
 
 }
@@ -107,15 +114,4 @@ extension SCDocument: CustomStringConvertible {
     return String(describing: "SCDocument(\(_id))")
   }
   
-}
-
-extension SCDocument: SCJsonProtocol {
-
-  public func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
-    switch name {
-    case Keys.id: if let id = (json as? [String: Any])?[Keys.id] as? SwiftCollection.Id { _id = id }
-    default: break
-    }
-  }
-
 }

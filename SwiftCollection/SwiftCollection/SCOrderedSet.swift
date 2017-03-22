@@ -24,7 +24,7 @@ import Foundation
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
-public class SCOrderedSet<Element: SCDocumentProtocol> {
+open class SCOrderedSet<Element: SCDocumentProtocol> {
 
   // Holds an array of elements.
   fileprivate var elements: [Element] = []
