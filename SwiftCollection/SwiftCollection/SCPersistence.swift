@@ -97,6 +97,15 @@ public protocol SCJsonProtocol {
   ///            replacement value.
   func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?)
   
+  /// Returns a JSON serialized string for this object.  The `jsonObject` is used for
+  /// serialization.
+  ///
+  /// - Parameter options: JSON output options.  Default is `prettyPrinted`.  Pass `[]` for no
+  ///   options.
+  /// - Returns: String representation of the `jsonObject`.
+  /// - Throws: `invalidJson` if the JSON object could not be serialized.
+  func jsonString(options: JSONSerialization.WritingOptions) throws -> String
+
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Save
@@ -110,15 +119,6 @@ public protocol SCJsonProtocol {
   /// - Returns: A key.
   func jsonKey() -> String
 
-  /// Returns a JSON serialized string for this object.  The `jsonObject` is used for
-  /// serialization.
-  ///
-  /// - Parameter options: JSON output options.  Default is `prettyPrinted`.  Pass `[]` for no 
-  ///   options.
-  /// - Returns: String representation of the `jsonObject`.
-  /// - Throws: `invalidJson` if the JSON object could not be serialized.
-  func jsonString(options: JSONSerialization.WritingOptions) throws -> String
-
   /// Saves this object as a JSON serialized string to the specified persistent storage.
   ///
   /// - Parameters:
@@ -129,6 +129,14 @@ public protocol SCJsonProtocol {
   ///   - `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
   func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws
   
+  /// Removes saved object from persistent storage.
+  ///
+  /// - Parameters:
+  ///   - storage: Persistent storage to be used.
+  ///   - completion: Called after the object has been removed.
+  /// - Throws: `missingJsonKey` if there is no key to retrieve the serialized object.  See `jsonKey()`.
+  func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws
+
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Load
@@ -453,6 +461,29 @@ extension SCJsonProtocol {
     }
   }
   
+  public func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
+    var success = false
+    
+    // get the key
+    let keyPath = try storageKeyPath()
+    
+    // remove from storage
+    switch storage {
+    case .userDefaults:
+      let ud = UserDefaults.standard
+      ud.removeObject(forKey: keyPath)
+      ud.synchronize()
+      success = true
+    }
+    
+    // done
+    if let completion = completion {
+      DispatchQueue.main.async {
+        completion(success)
+      }
+    }
+  }
+
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Load

@@ -512,6 +512,66 @@ extension SwiftCollectionPersistenceTests {
     }
     
   }
+  
+  func testJsonObjectsSaveAndRemove() {
+    // get object to test
+    let obj = Class1(defaults: true)
+    
+    // create expectations
+    let se = expectation(description: "Save Failed.")
+    let re = self.expectation(description: "Remove Failed.")
+    let le = self.expectation(description: "Load Failed.")
+    
+    // load object
+    let load = {
+      do {
+        var loaded = Class1()
+        try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
+          le.fulfill()
+          XCTAssertFalse(success)
+          XCTAssertNil(value)
+        })
+      } catch {
+        XCTFail()
+      }
+    }
+    
+    // remove object
+    let remove = {
+      do {
+        try obj.remove(jsonStorage: .userDefaults, completion: { (success) in
+          re.fulfill()
+          XCTAssertTrue(success)
+          if (success) {
+            load()
+          }
+        })
+      } catch {
+        XCTFail()
+      }
+    }
+    
+    // save object
+    do {
+      try obj.save(jsonStorage: .userDefaults) { (success) in
+        se.fulfill()
+        XCTAssertTrue(success)
+        if (success) {
+          remove()
+        }
+      }
+    } catch {
+      XCTFail()
+    }
+    
+    // wait for save and load
+    waitForExpectations(timeout: 60) { (error) in
+      if let error = error {
+        XCTFail("Save Failed: \(error.localizedDescription)")
+      }
+    }
+    
+  }
 
 }
 
