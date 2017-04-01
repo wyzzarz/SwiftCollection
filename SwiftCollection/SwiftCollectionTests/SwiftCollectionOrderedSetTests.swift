@@ -29,8 +29,9 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   let docD = SCDocument(id: 0xFF)
 
   // sets
-  class PersistedSet: SCOrderedSet<SCDocument>, SCJsonProtocol {
-    public func load(jsonObject json: AnyObject) throws -> AnyObject? {
+  final class PersistedSet: SCOrderedSet<SCDocument> {
+    
+    override func load(jsonObject json: AnyObject) throws -> AnyObject? {
       if let array = json as? [AnyObject] {
         for item in array {
           try? append(document: SCDocument(json: item))
@@ -38,6 +39,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
       }
       return json
     }
+    
   }
   var set1 = PersistedSet()
   var set2 = PersistedSet()

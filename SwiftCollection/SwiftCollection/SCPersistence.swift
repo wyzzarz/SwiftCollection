@@ -18,6 +18,10 @@
 
 import Foundation
 
+/*
+ * MARK: -
+ */
+
 extension SwiftCollection {
   
   /// A JSON serializable dictionary object.
@@ -42,6 +46,10 @@ extension SwiftCollection {
   
 }
 
+/*
+ * MARK: -
+ */
+
 /// Generic collections cannot be processed directly.  This protocol adds support for collections
 /// to provide their own elements.
 public protocol SCJsonCollectionProtocol {
@@ -53,8 +61,12 @@ public protocol SCJsonCollectionProtocol {
 
 }
 
+/*
+ * MARK: -
+ */
+
 /// Provides functions to serialize an object into JSON.  And to load an object from JSON.
-public protocol SCJsonProtocol {
+public protocol SCJsonObjectProtocol {
 
   /*
    * -----------------------------------------------------------------------------------------------
@@ -182,16 +194,24 @@ public protocol SCJsonProtocol {
 
 }
 
-extension SCJsonProtocol {
+/*
+ * MARK: -
+ */
+
+open class SCJsonObject: NSObject, SCJsonObjectProtocol {
   
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Initialize
    * -----------------------------------------------------------------------------------------------
    */
+  
+  override public required init() {
+    super.init()
+  }
 
-  public init(json: AnyObject) throws {
-    self.init()
+  public required init(json: AnyObject) throws {
+    super.init()
     _ = try load(jsonObject: json)
   }
   
@@ -376,7 +396,7 @@ extension SCJsonProtocol {
         willSerializeProperty(label, value)
       default:
         // handle objects conforming to this protocol
-        if let value = value as? SCJsonProtocol {
+        if let value = value as? SCJsonObjectProtocol {
           if let theValue = value.jsonObject() {
             willSerializeProperty(label, theValue)
             continue
@@ -394,16 +414,16 @@ extension SCJsonProtocol {
     return json as AnyObject?
   }
   
-  public func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?) {
+  open func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?) {
     return (label, value as AnyObject)
   }
 
-  public func jsonObject() -> AnyObject? {
+  open func jsonObject() -> AnyObject? {
     let json = _jsonObject(object: self)
     return json
   }
   
-  public func jsonString(options: JSONSerialization.WritingOptions = .prettyPrinted) throws -> String {
+  open func jsonString(options: JSONSerialization.WritingOptions = .prettyPrinted) throws -> String {
     let json = jsonObject() as Any
     guard JSONSerialization.isValidJSONObject(json) else { throw SwiftCollection.Errors.invalidJson }
     let data = try JSONSerialization.data(withJSONObject: json, options: options)
@@ -417,7 +437,7 @@ extension SCJsonProtocol {
    * -----------------------------------------------------------------------------------------------
    */
 
-  public func jsonKey() -> String {
+  open func jsonKey() -> String {
     let key = String(describing: type(of: self))
     return key
   }
@@ -435,7 +455,7 @@ extension SCJsonProtocol {
     return "\(SwiftCollection.bundleId).\(key)"
   }
 
-  public func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
+  final public func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
     
     // get the key
@@ -461,7 +481,7 @@ extension SCJsonProtocol {
     }
   }
   
-  public func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
+  final public func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
     
     // get the key
@@ -490,7 +510,7 @@ extension SCJsonProtocol {
    * -----------------------------------------------------------------------------------------------
    */
   
-  public mutating func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws {
+  final public func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws {
     // get the key
     let keyPath = try storageKeyPath()
     var success = false
@@ -518,7 +538,7 @@ extension SCJsonProtocol {
     }
   }
 
-  public mutating func load(jsonString json: String) throws -> AnyObject? {
+  open func load(jsonString json: String) throws -> AnyObject? {
     if let data = json.data(using: .utf8) {
       let obj = try JSONSerialization.jsonObject(with: data) as AnyObject
       return try load(jsonObject: obj)
@@ -526,7 +546,7 @@ extension SCJsonProtocol {
     return nil
   }
   
-  public mutating func load(jsonObject json: AnyObject) throws -> AnyObject? {
+  open func load(jsonObject json: AnyObject) throws -> AnyObject? {
     // ensure this json is an array or dictionary
     guard json is NSArray || json is NSDictionary else { throw SwiftCollection.Errors.invalidJson }
     
@@ -546,7 +566,7 @@ extension SCJsonProtocol {
     return json
   }
   
-  public mutating func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
+  open func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
     // nothing to do
   }
 
