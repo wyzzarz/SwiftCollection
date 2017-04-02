@@ -18,9 +18,8 @@
 
 import Foundation
 
-/// `SCOrderedSet` holds document objects conforming to `SCDocumentProtocol`.
-///
-/// Documents added to this collection include a primary key.
+/// `SCOrderedSet` holds `SCDocument` objects.  Documents added to this collection must include a
+/// primary key.
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
@@ -92,7 +91,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   /// - Parameter id: Optional id to be applied to the document.
   /// - Returns: A document that can be added to the collection.
   /// - Throws: `existingId` if a document has no id.  `generateId` if an id could not be generated.
-  open func createDocument(withId id: SwiftCollection.Id? = nil) throws -> Element {
+  open func create(withId id: SwiftCollection.Id? = nil) throws -> Element {
     let existing = createdIds.union(ids.set as! Set<SwiftCollection.Id>)
     var theId = id
     if theId != nil {
