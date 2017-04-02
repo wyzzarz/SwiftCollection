@@ -65,6 +65,10 @@ open class SCDocument: SCJsonObject {
   
   public required init(json: AnyObject) throws {
     try super.init(json: json)
+    // set id, if it exists
+    guard let dict = json as? [String: Any] else { return }
+    guard let anId = dict[Keys.id] as? SwiftCollection.Id else { return }
+    _id = anId
   }
 
   /// Creates an instance of this class with the specified `id`.
@@ -105,6 +109,14 @@ open class SCDocument: SCJsonObject {
    * MARK: - Json
    * -----------------------------------------------------------------------------------------------
    */
+  
+  override open func jsonObject() -> AnyObject? {
+    let json = super.jsonObject()
+    guard var dict = super.jsonObject() as? [String: Any] else { return json }
+    if dict[Keys.id] != nil { return json }
+    dict[Keys.id] = _id
+    return dict as AnyObject
+  }
 
   override open func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
     guard let dict = json as? [String: Any] else { return }

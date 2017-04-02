@@ -108,6 +108,12 @@ open class SCJsonObject: NSObject {
     // process each element in the array
     for element in elements {
       // serialize this element and add it to the array
+      if let jsonElement = element as? SCJsonObject {
+        if let jsonObject = jsonElement.jsonObject() {
+          json.append(jsonObject)
+          continue
+        }
+      }
       if let jsonElement = _jsonObject(object: element) {
         json.append(jsonElement)
       }
