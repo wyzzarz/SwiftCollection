@@ -54,7 +54,7 @@ extension Document.Keys {
 /// for documents in the collection.
 class OrderedSet: SCOrderedSet<Document> {
   
-  override func jsonKey() -> String {
+  override func storageKey() -> String {
     return "OrderedSetExample"
   }
   

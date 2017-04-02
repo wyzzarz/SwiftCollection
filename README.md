@@ -78,7 +78,7 @@ extension Document.Keys {
 /// for documents in the collection.
 class OrderedSet: SCOrderedSet<Document>, SCJsonProtocol {
 
-  func jsonKey() -> String {
+  func storageKey() -> String {
     return "OrderedSetExample"
   }
 

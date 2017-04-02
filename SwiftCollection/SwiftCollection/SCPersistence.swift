@@ -339,7 +339,7 @@ open class SCJsonObject: NSObject {
   /// The name of this class is returned by default.
   ///
   /// - Returns: A key.
-  open func jsonKey() -> String {
+  open func storageKey() -> String {
     let key = String(describing: type(of: self))
     return key
   }
@@ -347,11 +347,11 @@ open class SCJsonObject: NSObject {
   /// Returns a key path to store this object.
   ///
   /// - Returns: A key path.
-  /// - Throws: `missingJsonKey` if there is no key to store the serialized object.  See `jsonKey()`.
+  /// - Throws: `missingstorageKey` if there is no key to store the serialized object.  See `storageKey()`.
   fileprivate func storageKeyPath() throws -> String {
     // get the key
-    let key = jsonKey()
-    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingJsonKey }
+    let key = storageKey()
+    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingstorageKey }
     
     // return the key with this framework's bundle id
     return "\(SwiftCollection.bundleId).\(key)"
@@ -363,7 +363,7 @@ open class SCJsonObject: NSObject {
   ///   - storage: Persistent storage to be used.
   ///   - completion: Called after the object has been saved.
   /// - Throws:
-  ///   - `missingJsonKey` if there is no key to retrieve the serialized object.  See `jsonKey()`.
+  ///   - `missingstorageKey` if there is no key to retrieve the serialized object.  See `storageKey()`.
   ///   - `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
   final public func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
@@ -396,7 +396,7 @@ open class SCJsonObject: NSObject {
   /// - Parameters:
   ///   - storage: Persistent storage to be used.
   ///   - completion: Called after the object has been removed.
-  /// - Throws: `missingJsonKey` if there is no key to retrieve the serialized object.  See `jsonKey()`.
+  /// - Throws: `missingstorageKey` if there is no key to retrieve the serialized object.  See `storageKey()`.
   final public func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
     

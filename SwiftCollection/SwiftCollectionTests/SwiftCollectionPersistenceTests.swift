@@ -194,7 +194,7 @@ extension SwiftCollectionPersistenceTests {
       return (label, value as AnyObject)
     }
     
-    override func jsonKey() -> String {
+    override func storageKey() -> String {
       return "JsonClassABC"
     }
     
@@ -304,9 +304,9 @@ extension SwiftCollectionPersistenceTests {
   }
   
   func testKeys() {
-    XCTAssertEqual(JsonClass().jsonKey(), "JsonClassABC")
-    XCTAssertEqual(Class1().jsonKey(), "Class1")
-    XCTAssertEqual(Class2().jsonKey(), "Class2")
+    XCTAssertEqual(JsonClass().storageKey(), "JsonClassABC")
+    XCTAssertEqual(Class1().storageKey(), "Class1")
+    XCTAssertEqual(Class2().storageKey(), "Class2")
   }
   
   func testSaveJsonClass() {
