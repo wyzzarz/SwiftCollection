@@ -107,8 +107,9 @@ open class SCDocument: SCJsonObject {
    */
 
   override open func load(propertyWithName name: String, currentValue: Any, potentialValue: Any, json: AnyObject) {
+    guard let dict = json as? [String: Any] else { return }
     switch name {
-    case Keys.id: if let id = (json as? [String: Any])?[Keys.id] as? SwiftCollection.Id { _id = id }
+    case Keys.id: if let id = dict[name] as? SwiftCollection.Id { _id = id }
     default: break
     }
   }
