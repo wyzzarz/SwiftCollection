@@ -177,11 +177,11 @@ extension SwiftCollectionPersistenceTests {
       }
     }
     
-    override func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue: AnyObject?) {
+    override func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue: Any?) {
       switch label {
       case KeyValues.anotherEnumString.key:
         // reflection cannot be used to get the `rawValue` of an enum; special handling is required.
-        return (label, anotherEnumString?.rawValue as AnyObject?)
+        return (label, anotherEnumString?.rawValue)
       case KeyValues.anotherEnumNumber.key:
         // reflection cannot be used to get the `rawValue` of an enum; special handling is required.
         if let rawValue = anotherEnumNumber?.rawValue {
@@ -191,7 +191,7 @@ extension SwiftCollectionPersistenceTests {
         }
       default: break
       }
-      return (label, value as AnyObject)
+      return super.jsonObject(willSerializeProperty: label, value: value)
     }
     
     override func storageKey() -> String {

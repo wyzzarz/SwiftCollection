@@ -76,7 +76,7 @@ extension Document.Keys {
 ///
 /// A new persistent storage key is provided.  And loading from persistent storage is performed
 /// for documents in the collection.
-class OrderedSet: SCOrderedSet<Document>, SCJsonProtocol {
+class OrderedSet: SCOrderedSet<Document> {
 
   func storageKey() -> String {
     return "OrderedSetExample"

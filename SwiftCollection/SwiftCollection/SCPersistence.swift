@@ -238,7 +238,7 @@ open class SCJsonObject: NSObject {
     let willSerializeProperty = { (label: String, value: Any) in
       let (newLabel, newValue) = self.jsonObject(willSerializeProperty: label, value: value)
       guard newValue != nil && (newValue is NSString || newValue is NSNumber || newValue is NSArray || newValue is NSDictionary) else { return }
-      json[newLabel] = newValue!
+      json[newLabel] = newValue as AnyObject
     }
     
     for case let (label?, value) in mirror.children {
@@ -293,16 +293,18 @@ open class SCJsonObject: NSObject {
     return json as AnyObject?
   }
   
-  /// Objects that implement the `SCJsonProtocol` can modify the property for the serialized JSON
-  /// object.  This function is called as a property is being processed.
+  /// Subclasses can modify the property for the serialized JSON object.  This function is called as
+  /// a property is being processed.
+  ///
+  /// To prevent a property from being serialized, a `newValue` of `nil` should be returned.
   ///
   /// - Parameters:
   ///   - label: Optional label for property.
   ///   - value: Value for property.
-  /// - Returns: `newLabel` is the original or replacement label, `newValue` is the original or
-  ///            replacement value.
-  open func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : AnyObject?) {
-    return (label, value as AnyObject)
+  /// - Returns: `newLabel` is the original or replacement label, `newValue` is the original,
+  ///            replacement value, or `nil`.
+  open func jsonObject(willSerializeProperty label: String, value: Any) -> (newLabel: String, newValue : Any?) {
+    return (label, value)
   }
 
   /// Returns a foundation object that can be used to serialize JSON.  Must meet required
@@ -310,6 +312,9 @@ open class SCJsonObject: NSObject {
   ///
   /// By default, `Mirror` is used to reflect on an object's properties and serialize them as a
   /// JSON object.
+  ///
+  /// To adjust the label and/or value for when serializing a property, subclasses can override
+  /// `jsonObject(willSerializeProperty:value)`.
   ///
   /// See [JSONSerialization](apple-reference-documentation://hsVFr-345J) for more information.
   ///
