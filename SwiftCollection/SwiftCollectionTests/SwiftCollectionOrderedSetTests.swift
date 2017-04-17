@@ -51,6 +51,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   }
   
   override func tearDown() {
+    try? set1.remove(jsonStorage: .userDefaults, completion: nil)
     super.tearDown()
   }
   
