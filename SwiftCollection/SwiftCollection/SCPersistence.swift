@@ -345,6 +345,8 @@ open class SCJsonObject: NSObject {
    * -----------------------------------------------------------------------------------------------
    */
 
+  fileprivate static let storageKeyRoot = "\(SwiftCollection.bundleId).SCJsonObject"
+
   /// Returns key to be used when reading or writing a JSON serialized object to persistent storage.
   ///
   /// The name of this class is returned by default.
@@ -362,10 +364,10 @@ open class SCJsonObject: NSObject {
   fileprivate func storageKeyPath() throws -> String {
     // get the key
     let key = storageKey()
-    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingstorageKey }
+    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingStorageKey }
     
     // return the key with this framework's bundle id
-    return "\(SwiftCollection.bundleId).\(key)"
+    return "\(SCJsonObject.storageKeyRoot).\(key)"
   }
 
   /// Saves this object as a JSON serialized string to the specified persistent storage.
