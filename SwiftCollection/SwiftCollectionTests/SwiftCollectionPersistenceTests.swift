@@ -324,7 +324,7 @@ extension SwiftCollectionPersistenceTests {
     let load = {
       do {
         let loaded = JsonClass()
-        try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
+        _ = try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
           le.fulfill()
           XCTAssertTrue(success)
           XCTAssertTrue(value is NSDictionary)
@@ -500,7 +500,7 @@ extension SwiftCollectionPersistenceTests {
     let load = {
       do {
         let loaded = Class2()
-        try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
+        _ = try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
           le.fulfill()
           XCTAssertTrue(success)
           XCTAssertTrue(value is NSDictionary)
@@ -552,7 +552,7 @@ extension SwiftCollectionPersistenceTests {
     let load = {
       do {
         let loaded = Class2()
-        try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
+        _ = try loaded.load(jsonStorage: .userDefaults, completion: { (success, value) in
           le.fulfill()
           XCTAssertFalse(success)
           XCTAssertNil(value)

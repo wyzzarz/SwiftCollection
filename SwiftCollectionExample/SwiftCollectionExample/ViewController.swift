@@ -100,7 +100,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     try? orderedSet.save(jsonStorage: .userDefaults) { (success) in
       print("saved", success)
       let anotherOrderedSet = OrderedSet()
-      try? anotherOrderedSet.load(jsonStorage: .userDefaults) { (success, json) in
+      _ = try? anotherOrderedSet.load(jsonStorage: .userDefaults) { (success, json) in
         print("loaded", success)
         try? OrderedSet().remove(jsonStorage: .userDefaults, completion: nil)
       }

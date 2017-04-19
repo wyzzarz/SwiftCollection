@@ -445,7 +445,7 @@ open class SCJsonObject: NSObject {
   ///   - storage: Persistent storage to be used.
   ///   - completion: Called after the object has been loaded.
   /// - Throws: `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
-  final public func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws {
+  final public func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws -> Self {
     // get the key
     let keyPath = try storageKeyPath()
     var success = false
@@ -471,6 +471,8 @@ open class SCJsonObject: NSObject {
         completion(success, json)
       }
     }
+    
+    return self
   }
 
   /// Loads this object from a JSON serialized string.
