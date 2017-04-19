@@ -279,7 +279,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     
     let load = {
       XCTAssertEqual(self.set2.count, 0)
-      _ = try! self.set2.load(jsonStorage: .userDefaults, completion: { (success, json) in
+      try! self.set2.load(jsonStorage: .userDefaults, completion: { (success, json) in
         le.fulfill()
         XCTAssertEqual(self.set2.count, 3)
         XCTAssertEqual(self.set2.first, self.docA)

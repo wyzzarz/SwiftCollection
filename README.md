@@ -106,7 +106,7 @@ try? orderedSet.append(Document(id: 3, name: "Third"))
 try? orderedSet.save(jsonStorage: .userDefaults) { (success) in
   print("saved", success)
   var anotherOrderedSet = OrderedSet()
-  _ = try? anotherOrderedSet.load(jsonStorage: .userDefaults) { (success, json) in
+  try? anotherOrderedSet.load(jsonStorage: .userDefaults) { (success, json) in
     print("loaded", success)
     try? OrderedSet().remove(jsonStorage: .userDefaults, completion: nil)
   }
