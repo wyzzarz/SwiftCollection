@@ -18,12 +18,67 @@
 
 import Foundation
 
+public protocol SCOrderedSetDelegate {
+  
+  associatedtype Document
+  
+  /// Tells the delegate that a document will be inserted into the collection.
+  ///
+  /// - Parameters:
+  ///   - document: Document to be inserted.
+  ///   - index: Position to insert document.
+  func willInsert(_ document: Document, at i: Int)
+
+  /// Tells the delegate that a document was inserted.
+  ///
+  /// - Parameters:
+  ///   - document: Document that was inserted.
+  ///   - index: Position of inserted document.
+  ///   - success: `true` if the document was inserted; `false` otherwise.  Documents are not 
+  ///     inserted if they already exist in the collection.
+  func didInsert(_ document: Document, at i: Int, success: Bool)
+
+  /// Tells the delegate that a document will be appended to the collection.
+  ///
+  /// - Parameter document: Document to be appended.
+  func willAppend(_ document: Document)
+
+  /// Tells the delegate that a document was appended to the collection.
+  ///
+  /// - Parameters:
+  ///   - document: Document that was appended.
+  ///   - success: `true` if the document was inserted; `false` otherwise.  Documents are not
+  ///     appended if they already exist in the collection.
+  func didAppend(_ document: Document, success: Bool)
+
+  /// Tells the delegate that a document will be removed from the collection.
+  ///
+  /// - Parameter document: Document to be removed.
+  func willRemove(_ document: Document)
+
+  /// Tells the delegate that a document was removed from the collection.
+  ///
+  /// - Parameters:
+  ///   - document: Document that was removed
+  ///   - index: Position of removed document.
+  ///   - success: `true` if the document was removed; `false` otherwise.  Documents are not
+  ///     removed if they do not exist in the collection.
+  func didRemove(_ document: Document, at index: Int, success: Bool)
+
+  /// Tells the delegate that all documents will be removed from the collection.
+  func willRemoveAll()
+  
+  /// Tells the delegate that all documents were removed from the collection.
+  func didRemoveAll()
+  
+}
+
 /// `SCOrderedSet` holds `SCDocument` objects.  Documents added to this collection must include a
 /// primary key.
 ///
 /// The collection automatically arranges elements by the sort keys.
 ///
-open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
+open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate {
 
   // Holds an array of elements.
   fileprivate var elements: [Element] = []
@@ -34,7 +89,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   // Temporarily holds a set of ids for elements that have been created, but have not been added to 
   // elements.
   fileprivate var createdIds: Set<SwiftCollection.Id> = []
-
+  
   /// Creates an instance of `SCOrderedSet`.
   public required init() {
     super.init()
@@ -246,12 +301,20 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   ///   - i: Position to insert the document.  `i` must be a valid index into the collection.
   /// - Throws: `missingId` if the document has no id.
   open func insert(_ document: Element, at i: Int) throws {
+    willInsert(document, at: i)
+
     // ensure the document has an id
     guard document.hasId() else { throw SwiftCollection.Errors.missingId }
-    guard !ids.contains(document.id) else { return }
+    guard !ids.contains(document.id) else {
+      didInsert(document, at: i, success: false)
+      return
+    }
+    
     elements.insert(document, at: i)
     ids.insert(document.id, at: i)
     createdIds.remove(document.id)
+    
+    didInsert(document, at: i, success: true)
   }
   
   /// Adds the documents to the end of the collection.
@@ -273,12 +336,23 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   /// - Parameter document: Document to be added.
   /// - Throws: `missingId` if the document has no id.
   open func append(_ document: Element) throws {
+    willAppend(document)
+    
     // ensure the document has an id
     guard document.hasId() else { throw SwiftCollection.Errors.missingId }
-    guard !ids.contains(document.id) else { return }
+    guard !ids.contains(document.id) else {
+      didAppend(document, success: false)
+      return
+    }
+
     elements.append(document)
     ids.add(document.id)
     createdIds.remove(document.id)
+
+    guard !ids.contains(document.id) else {
+      didAppend(document, success: true)
+      return
+    }
   }
   
   /// Adds documents to the end of the collection.  Existing documents are ignored.
@@ -304,9 +378,13 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   ///
   /// - Parameter document: Document to be removed.
   open func remove(_ document: Element) {
+    willRemove(document)
     if let i = index(of: document) {
       elements.remove(at: i.index)
       ids.remove(at: i.index)
+      didRemove(document, at: i.index, success: true)
+    } else {
+      didRemove(document, at: NSNotFound, success: false)
     }
     createdIds.remove(document.id)
   }
@@ -317,19 +395,23 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
   /// - Throws: `missingId` if a document has no id.
   open func remove<C : Collection>(contentsOf newDocuments: C) where C.Iterator.Element == Element {
     for d in newDocuments {
+      willRemove(d)
       if let i = index(of: d) {
         elements.remove(at: i.index)
         ids.remove(at: i.index)
-        createdIds.remove(d.id)
+        didRemove(d, at: i.index, success: true)
       }
+      createdIds.remove(d.id)
     }
   }
 
   /// Removes all documents from the collection.
   open func removeAll() {
+    willRemoveAll()
     elements.removeAll()
     ids.removeAllObjects()
     createdIds.removeAll()
+    didRemoveAll()
   }
   
   /*
@@ -382,6 +464,30 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject {
       }
     }
   }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Delegate
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  public typealias Document = Element
+
+  open func willInsert(_ document: Document, at i: Int) { }
+  
+  open func didInsert(_ document: Document, at i: Int, success: Bool) { }
+  
+  open func willAppend(_ document: Document) { }
+  
+  open func didAppend(_ document: Document, success: Bool) { }
+  
+  open func willRemove(_ document: Document) { }
+  
+  open func didRemove(_ document: Document, at index: Int, success: Bool) { }
+  
+  open func willRemoveAll() { }
+  
+  open func didRemoveAll() { }
 
 }
 

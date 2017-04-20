@@ -28,7 +28,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   let docC = SCDocument(id: 0xF)
   let docD = SCDocument(id: 0xFF)
 
-  // sets
+  // persisted sets
   final class PersistedSet: SCOrderedSet<SCDocument> {
     
     override func load(jsonObject json: AnyObject) throws -> AnyObject? {
@@ -43,6 +43,44 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   }
   var set1 = PersistedSet()
   var set2 = PersistedSet()
+
+  
+  // delegate sets
+  final class DelegateSet: SCOrderedSet<SCDocument> {
+    var willCount: Int = 0
+    var didCount: Int = 0
+    var successes: Int = 0
+    var failures: Int = 0
+    func resetCounts() {
+      willCount = 0
+      didCount = 0
+      successes = 0
+      failures = 0
+    }
+    override func willInsert(_ document: Document, at index: Int) {
+      willCount += 1
+    }
+    override func didInsert(_ document: Document, at index: Int, success: Bool) {
+      didCount += 1
+      if success { successes += 1 } else { failures += 1 }
+    }
+    override func willAppend(_ document: Document) {
+      willCount += 1
+    }
+    override func didAppend(_ document: Document, success: Bool) {
+      didCount += 1
+      if success { successes += 1 } else { failures += 1 }
+    }
+    override func willRemove(_ document: Document) {
+      willCount += 1
+    }
+    override func didRemove(_ document: Document, at index: Int, success: Bool) {
+      didCount += 1
+      if success { successes += 1 } else { failures += 1 }
+    }
+    override func willRemoveAll() {willCount += 1 }
+    override func didRemoveAll() { didCount += 1 }
+  }
 
   override func setUp() {
     super.setUp()
@@ -128,7 +166,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
   
   func testSequence() {
-    let arr = try! SCOrderedSet([docA, docB, docC])
+    let arr = try! SCOrderedSet<SCDocument>([docA, docB, docC])
     XCTAssertEqual(arr.count, 3)
     for (i, e) in arr.enumerated() {
       switch i {
@@ -147,7 +185,7 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
 
   func testCollection() {
-    let arr = try! SCOrderedSet([docA, docB, docC])
+    let arr = try! SCOrderedSet<SCDocument>([docA, docB, docC])
     XCTAssertEqual(arr[arr.startIndex], docA)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(arr[arr.index(arr.startIndex, offsetBy: 2)], docC)
@@ -262,6 +300,94 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set1.count, 2)
     XCTAssertEqual(set1.first, docA)
     XCTAssertEqual(set1.last, docB)
+  }
+  
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Delegate
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  func testInsertDelegate() {
+    let set = DelegateSet()
+    
+    try! set.insert(docA, at: 0)
+    XCTAssertEqual(set.willCount, 1)
+    XCTAssertEqual(set.didCount, 1)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 0)
+    
+    try! set.insert(docA, at: 0)
+    XCTAssertEqual(set.willCount, 2)
+    XCTAssertEqual(set.didCount, 2)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 1)
+  }
+
+  func testAppendDelegate() {
+    let set = DelegateSet()
+
+    try! set.append(docA)
+    XCTAssertEqual(set.willCount, 1)
+    XCTAssertEqual(set.didCount, 1)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 0)
+
+    try! set.append(docA)
+    XCTAssertEqual(set.willCount, 2)
+    XCTAssertEqual(set.didCount, 2)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 1)
+  }
+  
+  func testRemoveDelegate() {
+    let set = DelegateSet()
+
+    try! set.append(contentsOf: [docA, docB, docC, docD])
+    XCTAssertEqual(set.willCount, 4)
+    XCTAssertEqual(set.didCount, 4)
+    XCTAssertEqual(set.successes, 4)
+    XCTAssertEqual(set.failures, 0)
+
+    set.resetCounts()
+    XCTAssertEqual(set.willCount, 0)
+    XCTAssertEqual(set.didCount, 0)
+    XCTAssertEqual(set.successes, 0)
+    XCTAssertEqual(set.failures, 0)
+
+    set.remove(docA)
+    XCTAssertEqual(set.willCount, 1)
+    XCTAssertEqual(set.didCount, 1)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 0)
+    
+    set.remove(docA)
+    XCTAssertEqual(set.willCount, 2)
+    XCTAssertEqual(set.didCount, 2)
+    XCTAssertEqual(set.successes, 1)
+    XCTAssertEqual(set.failures, 1)
+  }
+  
+  func testRemoveAllDelegate() {
+    let set = DelegateSet()
+    
+    try! set.append(contentsOf: [docA, docB, docC, docD])
+    XCTAssertEqual(set.willCount, 4)
+    XCTAssertEqual(set.didCount, 4)
+    XCTAssertEqual(set.successes, 4)
+    XCTAssertEqual(set.failures, 0)
+    
+    set.resetCounts()
+    XCTAssertEqual(set.willCount, 0)
+    XCTAssertEqual(set.didCount, 0)
+    XCTAssertEqual(set.successes, 0)
+    XCTAssertEqual(set.failures, 0)
+
+    set.removeAll()
+    XCTAssertEqual(set.willCount, 1)
+    XCTAssertEqual(set.didCount, 1)
+    XCTAssertEqual(set.successes, 0)
+    XCTAssertEqual(set.failures, 0)
   }
 
   /*
