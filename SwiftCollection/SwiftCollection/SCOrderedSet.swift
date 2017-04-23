@@ -70,7 +70,25 @@ public protocol SCOrderedSetDelegate {
   
   /// Tells the delegate that all documents were removed from the collection.
   func didRemoveAll()
-  
+
+  /// Tells the delegate that a document will be replaced.
+  ///
+  /// - Parameters:
+  ///   - document: Document to be replaced.
+  ///   - with: Document to be used as a replacement.
+  ///   - i: Location of document to be replaced.
+  func willReplace(_ document: Document, with: Document, at i: Int)
+
+  /// Tells the delegate that a document was replaced.
+  ///
+  /// - Parameters:
+  ///   - document: Document that was replaced.
+  ///   - with: Document used as a replacement.
+  ///   - i: Location of replaced document.
+  ///   - success: `true` if the document was replaced; `false` otherwise.  Documents are not
+  ///     replaced if they do not exist in the collection.
+  func didReplace(_ document: Document, with: Document, at i: Int, success: Bool)
+
 }
 
 /// `SCOrderedSet` holds `SCDocument` objects.  Documents added to this collection must include a
@@ -413,7 +431,55 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     createdIds.removeAll()
     didRemoveAll()
   }
+
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Replace
+   * -----------------------------------------------------------------------------------------------
+   */
   
+  /// Replaces document with the new document.
+  ///
+  /// The id of the new document will be replaced by the id of the existing document.
+  ///
+  /// - Parameters:
+  ///   - document: Document to be replaced.
+  ///   - with: Document to be used as a replacement.
+  /// - Throws: `notFound` if the document does not exist in the collection.
+  open func replace(_ document: Element, with: Element) throws {
+    guard let i = elements.index(of: document) else { throw SwiftCollection.Errors.notFound }
+    try replace(at: i, with: with)
+  }
+  
+  /// Replaces document at the specified index with the new document.
+  ///
+  /// The id of the new document will be replaced by the id of the existing document.
+  ///
+  /// - Parameters:
+  ///   - i: Location of document to be replaced.
+  ///   - with: Document to be used as a replacement.
+  /// - Throws: `notFound` if the document does not exist in the collection.
+  open func replace(at index: Index, with: Element) throws {
+    try replace(at: index.index, with: with)
+  }
+
+  /// Replaces document at the specified index with the new document.
+  ///
+  /// The id of the new document will be replaced by the id of the existing document.
+  ///
+  /// - Parameters:
+  ///   - i: Location of document to be replaced.
+  ///   - with: Document to be used as a replacement.
+  /// - Throws: `notFound` if the document does not exist in the collection.
+  open func replace(at i: Int, with: Element) throws {
+    guard (0..<elements.count).contains(i) else { throw SwiftCollection.Errors.notFound }
+    let existing = elements[i]
+    willReplace(existing, with: with, at: i)
+    with.setId(existing.id)
+    elements[i] = with
+    didReplace(existing, with: with, at: i, success: true)
+  }
+
   /*
    * -----------------------------------------------------------------------------------------------
    * MARK: - Combine
@@ -488,7 +554,11 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   open func willRemoveAll() { }
   
   open func didRemoveAll() { }
+  
+  open func willReplace(_ document: Element, with: Element, at i: Int) { }
 
+  open func didReplace(_ document: Element, with: Element, at i: Int, success: Bool) { }
+  
 }
 
 /*
