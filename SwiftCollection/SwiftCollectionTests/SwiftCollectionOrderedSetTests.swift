@@ -77,17 +77,17 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     override func didEndChanges() {
       didEndCount += 1
     }
-    override func willInsert(_ document: Document, at i: Int) -> Bool {
+    override func willInsert(_ document: Document, at i: Int) throws -> Bool {
       willCount += 1
-      return super.willInsert(document, at: i)
+      return try super.willInsert(document, at: i)
     }
     override func didInsert(_ document: Document, at i: Int, success: Bool) {
       didCount += 1
       if success { successes += 1 } else { failures += 1 }
     }
-    override func willAppend(_ document: Document) -> Bool {
+    override func willAppend(_ document: Document) throws -> Bool {
       willCount += 1
-      return super.willAppend(document)
+      return try super.willAppend(document)
     }
     override func didAppend(_ document: Document, success: Bool) {
       didCount += 1
@@ -108,9 +108,9 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     override func didRemoveAll() {
       didCount += 1
     }
-    override func willReplace(_ document: Document, with: Document, at i: Int) -> Bool {
+    override func willReplace(_ document: Document, with: Document, at i: Int) throws -> Bool {
       willCount += 1
-      return super.willReplace(document, with: with, at: i)
+      return try super.willReplace(document, with: with, at: i)
     }
     override func didReplace(_ document: Document, with: Document, at i: Int, success: Bool) {
       didCount += 1

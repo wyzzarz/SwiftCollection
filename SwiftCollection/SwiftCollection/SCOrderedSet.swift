@@ -34,7 +34,7 @@ public protocol SCOrderedSetDelegate {
   ///   - document: Document to be inserted.
   ///   - i: Position to insert document.
   /// - Returns: `true` if the document can be inserted; `false` otherwise.
-  func willInsert(_ document: Document, at i: Int) -> Bool
+  func willInsert(_ document: Document, at i: Int) throws -> Bool
 
   /// Tells the delegate that a document was inserted.
   ///
@@ -49,7 +49,7 @@ public protocol SCOrderedSetDelegate {
   ///
   /// - Parameter document: Document to be appended.
   /// - Returns: `true` if the document can be appended; `false` otherwise.
-  func willAppend(_ document: Document) -> Bool
+  func willAppend(_ document: Document) throws -> Bool
 
   /// Tells the delegate that a document was appended to the collection.
   ///
@@ -88,7 +88,7 @@ public protocol SCOrderedSetDelegate {
   ///   - with: Document to be used as a replacement.
   ///   - i: Location of document to be replaced.
   /// - Returns: `true` if the document can be replaced; `false` otherwise.
-  func willReplace(_ document: Document, with: Document, at i: Int) -> Bool
+  func willReplace(_ document: Document, with: Document, at i: Int) throws -> Bool
 
   /// Tells the delegate that a document was replaced.
   ///
@@ -348,7 +348,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   fileprivate func insert(_ document: Element, at i: Int, multipleChanges: Bool) throws {
     if !multipleChanges { willStartChanges() }
     
-    guard willInsert(document, at: i) else {
+    guard try willInsert(document, at: i) else {
       didInsert(document, at: i, success: false)
       if !multipleChanges { didEndChanges() }
       return
@@ -404,7 +404,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   /// - Throws: `missingId` if the document has no id.
   fileprivate func append(_ document: Element, multipleChanges: Bool) throws {
     if !multipleChanges { willStartChanges() }
-    guard willAppend(document) else {
+    guard try willAppend(document) else {
       didAppend(document, success: false)
       if !multipleChanges { didEndChanges() }
       return
@@ -545,7 +545,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     guard (0..<elements.count).contains(i) else { throw SwiftCollection.Errors.notFound }
     willStartChanges()
     let existing = elements[i]
-    guard willReplace(existing, with: with, at: i) else {
+    guard try willReplace(existing, with: with, at: i) else {
       didReplace(existing, with: with, at: i, success: false)
       return
     }
@@ -618,11 +618,11 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
 
   open func didEndChanges() { }
   
-  open func willInsert(_ document: Document, at i: Int) -> Bool { return true }
+  open func willInsert(_ document: Document, at i: Int) throws -> Bool { return true }
   
   open func didInsert(_ document: Document, at i: Int, success: Bool) { }
   
-  open func willAppend(_ document: Document) -> Bool { return true }
+  open func willAppend(_ document: Document) throws -> Bool { return true }
   
   open func didAppend(_ document: Document, success: Bool) { }
   
@@ -634,7 +634,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   
   open func didRemoveAll() { }
   
-  open func willReplace(_ document: Element, with: Element, at i: Int) -> Bool { return true }
+  open func willReplace(_ document: Element, with: Element, at i: Int) throws -> Bool { return true }
 
   open func didReplace(_ document: Element, with: Element, at i: Int, success: Bool) { }
   
