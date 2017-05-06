@@ -451,8 +451,8 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   ///
   /// - Parameters:
   ///   - document: Document to be removed.
-  open func remove(_ document: Element) {
-    remove(document, multipleChanges: false)
+  open func remove(_ document: Element) -> Element? {
+    return remove(document, multipleChanges: false)
   }
   
   /// Removes the document from the collection.
@@ -461,34 +461,40 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   ///   - document: Document to be removed.
   ///   - multipleChanges: `true` if willStartChanges() and didEndChanges() will be executed from another
   ///     routine; `false` otherwise.  Defuault is `false`.
-  fileprivate func remove(_ document: Element, multipleChanges: Bool) {
+  fileprivate func remove(_ document: Element, multipleChanges: Bool) -> Element? {
     if !multipleChanges { willStartChanges() }
     guard willRemove(document) else {
       didRemove(document, at: NSNotFound, success: false)
       if !multipleChanges { didEndChanges() }
-      return
+      return nil
     }
+    var removed: Element?
     if let i = index(of: document) {
-      elements.remove(at: i.index)
-      ids.remove(at: i.index)
+      removed = elements.remove(at: i.index)
+      ids.removeObject(at: i.index)
       didRemove(document, at: i.index, success: true)
     } else {
       didRemove(document, at: NSNotFound, success: false)
     }
     createdIds.remove(document.id)
     if !multipleChanges { didEndChanges() }
+    return removed
   }
  
   /// Removes documents from the collection.
   ///
   /// - Parameter newDocuments: A collection of documents to be removed.
   /// - Throws: `missingId` if a document has no id.
-  open func remove<C : Collection>(contentsOf newDocuments: C) where C.Iterator.Element == Element {
+  open func remove<C : Collection>(contentsOf newDocuments: C) -> [Element] where C.Iterator.Element == Element {
     willStartChanges()
+    var removed: [Element] = []
     for d in newDocuments {
-      remove(d, multipleChanges: true)
+      if let r = remove(d, multipleChanges: true) {
+        removed.append(r)
+      }
     }
     didEndChanges()
+    return removed
   }
 
   /// Removes all documents from the collection.

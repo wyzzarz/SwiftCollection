@@ -286,14 +286,16 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   func testRemoveDocument() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
     XCTAssertEqual(set.count, 3)
-    set.remove(docB)
+    _ = set.remove(docB)
     XCTAssertEqual(set.count, 2)
+    try! set.append(docB)
+    XCTAssertEqual(set.count, 3)
   }
 
   func testRemoveDocuments() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
     XCTAssertEqual(set.count, 3)
-    set.remove(contentsOf: [docA, docC])
+    _ = set.remove(contentsOf: [docA, docC])
     XCTAssertEqual(set.count, 1)
     XCTAssertEqual(set.last, docB)
   }
@@ -471,7 +473,8 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set.successes, 0)
     XCTAssertEqual(set.failures, 0)
 
-    set.remove(docA)
+    let removed = set.remove(docA)
+    XCTAssertEqual(removed, docA)
     XCTAssertEqual(set.didEndCount, 1)
     XCTAssertEqual(set.willCount, 1)
     XCTAssertEqual(set.willCount, 1)
@@ -479,7 +482,8 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set.successes, 1)
     XCTAssertEqual(set.failures, 0)
     
-    set.remove(docA)
+    let notRemoved = set.remove(docA)
+    XCTAssertNil(notRemoved)
     XCTAssertEqual(set.willStartCount, 2)
     XCTAssertEqual(set.didEndCount, 2)
     XCTAssertEqual(set.willCount, 2)
@@ -487,7 +491,8 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set.successes, 1)
     XCTAssertEqual(set.failures, 1)
     
-    set.remove(contentsOf: [docB, docC])
+    let removes = set.remove(contentsOf: [docB, docC])
+    XCTAssertEqual(removes, [docB, docC])
     XCTAssertEqual(set.willStartCount, 3)
     XCTAssertEqual(set.didEndCount, 3)
     XCTAssertEqual(set.willCount, 4)
