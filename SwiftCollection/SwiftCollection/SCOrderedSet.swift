@@ -157,7 +157,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
    */
   
   override open var description: String {
-    return String(describing: ids)
+    return String(describing: elements)
   }
 
   /*

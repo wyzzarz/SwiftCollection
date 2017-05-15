@@ -31,6 +31,10 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
       self.name = name
     }
     
+    override var description: String {
+      return String(describing: "\(String(describing: type(of: self)))(\(id),\(name))")
+    }
+    
   }
   let docNone = NamedDocument(id: 0x0, name: "None")
   let docA = NamedDocument(id: 0x1, name: "A")
