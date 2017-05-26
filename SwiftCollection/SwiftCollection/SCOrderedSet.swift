@@ -505,7 +505,8 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     if !multipleChanges { didEndChanges() }
   }
   
-  /// Adds documents to the end of the collection.  Existing documents are ignored.
+  /// Inserts the documents into the collection based on the default sort.  If there is no sort,
+  /// then the documents are added to the end of the collection.
   ///
   /// - Parameter newDocuments: A collection of documents to be added.
   /// - Throws: `missingId` if a document has no id.
