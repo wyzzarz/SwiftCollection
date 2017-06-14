@@ -41,6 +41,9 @@ extension SwiftCollection {
     
     /// `UserDefaults` as the persistence store.
     case userDefaults
+   
+    /// Application `Documents` directory in the file system as the persistence store.
+    case documents
     
   }
   
@@ -347,6 +350,14 @@ open class SCJsonObject: NSObject {
 
   fileprivate static let storageKeyRoot = "\(SwiftCollection.bundleId).SCJsonObject"
 
+  fileprivate lazy var storageUrl: URL? = {
+    let fm = FileManager.default
+    guard let documentsUrl = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+    let storageUrl = documentsUrl.appendingPathComponent(SwiftCollection.bundleId, isDirectory: true)
+    try? fm.createDirectory(at: storageUrl, withIntermediateDirectories: true, attributes: nil)
+    return storageUrl
+  }()
+  
   /// Returns key to be used when reading or writing a JSON serialized object to persistent storage.
   ///
   /// The name of this class is returned by default.
@@ -369,6 +380,16 @@ open class SCJsonObject: NSObject {
     // return the key with this framework's bundle id
     return "\(SCJsonObject.storageKeyRoot).\(key)"
   }
+  
+  /// Returns a path to store this object.
+  fileprivate func storagePathURL(_ storage: SwiftCollection.Storage) -> URL? {
+    switch storage {
+    case .userDefaults:
+      return nil
+    case .documents:
+      return URL(fileURLWithPath: storageKey(), relativeTo: storageUrl).appendingPathExtension("json")
+    }
+  }
 
   /// Saves this object as a JSON serialized string to the specified persistent storage.
   ///
@@ -380,6 +401,15 @@ open class SCJsonObject: NSObject {
   ///   - `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
   final public func save(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
+    
+    // done
+    defer {
+      if let completion = completion {
+        DispatchQueue.main.async {
+          completion(success)
+        }
+      }
+    }
     
     // get the key
     let keyPath = try storageKeyPath()
@@ -394,13 +424,14 @@ open class SCJsonObject: NSObject {
       ud.set(json, forKey: keyPath)
       ud.synchronize()
       success = true
-    }
-
-    // done
-    if let completion = completion {
-      DispatchQueue.main.async {
-        completion(success)
-      }
+    case .documents:
+      success = false
+      guard let url = storagePathURL(storage) else { return }
+      print(url)
+      do {
+        try json.write(to: url, atomically: true, encoding: .utf8)
+        success = true
+      } catch { }
     }
   }
   
@@ -413,6 +444,15 @@ open class SCJsonObject: NSObject {
   final public func remove(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool) -> Void)?) throws {
     var success = false
     
+    // done
+    defer {
+      if let completion = completion {
+        DispatchQueue.main.async {
+          completion(success)
+        }
+      }
+    }
+
     // get the key
     let keyPath = try storageKeyPath()
     
@@ -423,13 +463,13 @@ open class SCJsonObject: NSObject {
       ud.removeObject(forKey: keyPath)
       ud.synchronize()
       success = true
-    }
-    
-    // done
-    if let completion = completion {
-      DispatchQueue.main.async {
-        completion(success)
-      }
+    case .documents:
+      success = false
+      guard let url = storagePathURL(storage) else { return }
+      do {
+        try FileManager.default.removeItem(at: url)
+        success = true
+      } catch { }
     }
   }
 
@@ -446,16 +486,21 @@ open class SCJsonObject: NSObject {
   ///   - completion: Called after the object has been loaded.
   /// - Throws: `invalidJson` if the JSON object is not an `Array` or `Dictionary`.
   final public func load(jsonStorage storage: SwiftCollection.Storage, completion: ((_ success: Bool, _ json: AnyObject?) -> Void)?) throws {
-    // get the key
-    let keyPath = try storageKeyPath()
     var success = false
     
+    // get the key
+    let keyPath = try storageKeyPath()
+    
     // load serialized JSON from storage
-    let str: String?
+    var str: String? = nil
     switch storage {
     case .userDefaults:
       let ud = UserDefaults.standard
       str = ud.string(forKey: keyPath)
+    case .documents:
+      if let url = storagePathURL(storage) {
+        str = try? String(contentsOf: url, encoding: .utf8)
+      }
     }
     
     // get JSON object
@@ -466,9 +511,11 @@ open class SCJsonObject: NSObject {
     }
     
     // done
-    if let completion = completion {
-      DispatchQueue.main.async {
-        completion(success, json)
+    defer {
+      if let completion = completion {
+        DispatchQueue.main.async {
+          completion(success, json)
+        }
       }
     }
   }

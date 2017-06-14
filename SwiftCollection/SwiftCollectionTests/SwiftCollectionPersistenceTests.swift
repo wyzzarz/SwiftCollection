@@ -378,6 +378,53 @@ extension SwiftCollectionPersistenceTests {
     }
   }
   
+  func testSaveJsonClassToDocuments() {
+    let storage: SwiftCollection.Storage = .documents
+    
+    // get struct to test
+    let obj = JsonClass(defaults: true)
+    defer {
+      try? obj.remove(jsonStorage: storage, completion: nil)
+    }
+    
+    // create expectations
+    let se = expectation(description: "Save Failed.")
+    let le = self.expectation(description: "Load Failed.")
+    
+    // load object
+    let load = {
+      do {
+        let loaded = JsonClass()
+        try loaded.load(jsonStorage: storage, completion: { (success, value) in
+          le.fulfill()
+          XCTAssertTrue(success)
+        })
+      } catch {
+        XCTFail()
+      }
+    }
+    
+    // save object
+    do {
+      try obj.save(jsonStorage: storage) { (success) in
+        se.fulfill()
+        XCTAssertTrue(success)
+        if (success) {
+          load()
+        }
+      }
+    } catch {
+      XCTFail()
+    }
+    
+    // wait for save and load
+    waitForExpectations(timeout: 60) { (error) in
+      if let error = error {
+        XCTFail("Save Failed: \(error.localizedDescription)")
+      }
+    }
+  }
+
 }
 
 /*
