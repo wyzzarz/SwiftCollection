@@ -387,7 +387,11 @@ open class SCJsonObject: NSObject {
     case .userDefaults:
       return nil
     case .documents:
-      return URL(fileURLWithPath: storageKey(), relativeTo: storageUrl).appendingPathExtension("json")
+      let url = URL(fileURLWithPath: storageKey(), relativeTo: storageUrl).appendingPathExtension("json")
+      #if DEBUG
+        print(url.absoluteString)
+      #endif
+      return url
     }
   }
 
@@ -427,7 +431,6 @@ open class SCJsonObject: NSObject {
     case .documents:
       success = false
       guard let url = storagePathURL(storage) else { return }
-      print(url)
       do {
         try json.write(to: url, atomically: true, encoding: .utf8)
         success = true
