@@ -55,8 +55,6 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     }
     
   }
-  var set1 = PersistedSet()
-  var set2 = PersistedSet()
   
   // sorted sets
   class SortedSet: PersistedSet {
@@ -154,12 +152,10 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    set1.removeAll()
-    set2.removeAll()
   }
   
   override func tearDown() {
-    try? set1.remove(jsonStorage: .userDefaults, completion: nil)
+    try? PersistedSet().remove(jsonStorage: .userDefaults, completion: nil)
     super.tearDown()
   }
   
@@ -170,41 +166,46 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
 
   func testCreateDocument() {
-    let doc1 = try! set1.create()
+    let set = PersistedSet()
+    let doc1 = try! set.create()
     XCTAssertNotNil(doc1)
     XCTAssertGreaterThan(doc1.id, 0)
-    XCTAssertThrowsError(try set1.create(withId: doc1.id))
-    let doc2 = try! set1.create(withId: 2)
+    XCTAssertThrowsError(try set.create(withId: doc1.id))
+    let doc2 = try! set.create(withId: 2)
     XCTAssertEqual(doc2.id, 2)
   }
   
   func testRegisterDocument() {
+    let set = PersistedSet()
+
     // register an empty document
     let doc1 = NamedDocument()
     XCTAssertEqual(doc1.id, 0)
-    try? set1.register(doc1)
+    try? set.register(doc1)
     XCTAssertGreaterThan(doc1.id, 0)
     
     // register a document with an existing id
     let doc2 = NamedDocument(id: doc1.id > 1000 ? 1000 : 1001)
-    try? set1.register(doc2)
+    try? set.register(doc2)
     
     // register a document with a hint for an existing id
     let doc3 = NamedDocument()
     XCTAssertEqual(doc3.id, 0)
-    try? set1.register(doc3, hint: doc2.id)
+    try? set.register(doc3, hint: doc2.id)
     XCTAssertNotEqual(doc3.id, doc2.id)
   }
   
   func testRegisterNonExistingHint() {
+    let set = PersistedSet()
+
     // register an empty document
     let doc1 = NamedDocument()
-    try? set1.register(doc1)
+    try? set.register(doc1)
     
     // register a document with a hint for a new id
     let id2: SwiftCollection.Id = doc1.id > 1000 ? 1000 : 1001
     let doc2 = NamedDocument()
-    try? set1.register(doc2, hint: id2)
+    try? set.register(doc2, hint: id2)
     XCTAssertEqual(doc2.id, id2)
   }
   
@@ -215,18 +216,20 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
 
   func testId() {
-    try! set1.append(contentsOf: [docA, docB, docC])
-    XCTAssertEqual(set1.firstId, docA.id)
-    XCTAssertEqual(set1.id(after: set1.firstId), docB.id)
-    XCTAssertEqual(set1.id(before: set1.lastId), docB.id)
-    XCTAssertEqual(set1.lastId, docC.id)
+    let set = PersistedSet()
+    try! set.append(contentsOf: [docA, docB, docC])
+    XCTAssertEqual(set.firstId, docA.id)
+    XCTAssertEqual(set.id(after: set.firstId), docB.id)
+    XCTAssertEqual(set.id(before: set.lastId), docB.id)
+    XCTAssertEqual(set.lastId, docC.id)
     
   }
 
   func testContainsId() {
-    try! set1.append(contentsOf: [docA, docB, docC])
-    XCTAssertTrue(set1.contains(id: docA.id))
-    XCTAssertFalse(set1.contains(id: docD.id))
+    let set = PersistedSet()
+    try! set.append(contentsOf: [docA, docB, docC])
+    XCTAssertTrue(set.contains(id: docA.id))
+    XCTAssertFalse(set.contains(id: docD.id))
   }
   
   /*
@@ -269,37 +272,105 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
   
   func testEmptyDocument() {
-    XCTAssertThrowsError(try set1.append(docNone))
+    XCTAssertThrowsError(try PersistedSet().append(docNone))
   }
 
   func testAppendDocument() {
-    try! set1.append(docA)
-    try! set1.append(docB)
-    XCTAssertEqual(set1.count, 2)
-    XCTAssertEqual(set1.first, docA)
-    XCTAssertEqual(set1.last, docB)
+    let set = PersistedSet()
+
+    var documents: [SCDocument: Int] = [docA: 0, docB: 1]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? PersistedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      guard let change = changes.first else { return false }
+      guard let document = change.document else { return false }
+      guard let index = change.index else { return false }
+      if index == documents[document] { documents.removeValue(forKey: document) }
+      return documents.count == 0
+    }
+
+    try! set.append(docA)
+    try! set.append(docB)
+    XCTAssertEqual(set.count, 2)
+    XCTAssertEqual(set.first, docA)
+    XCTAssertEqual(set.last, docB)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testAppendDocuments() {
-    try! set1.append(docA)
-    try! set1.append(contentsOf: [docB, docC])
-    XCTAssertEqual(set1.count, 3)
-    XCTAssertEqual(set1.first, docA)
-    XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
-    XCTAssertEqual(set1.last, docC)
+    let set = PersistedSet()
+
+    var documents: [SCDocument: Int] = [docA: 0, docB: 1, docC: 2]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard let set = n.object as? PersistedSet else { return false }
+      guard set == set else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
+    try! set.append(docA)
+    try! set.append(contentsOf: [docB, docC])
+    XCTAssertEqual(set.count, 3)
+    XCTAssertEqual(set.first, docA)
+    XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set.last, docC)
+    
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   func testInsertDocument() {
-    try! set1.insert(docC, at: 0)
-    try! set1.insert(docB, at: 0)
-    try! set1.insert(docA, at: 0)
-    XCTAssertEqual(set1.count, 3)
-    XCTAssertEqual(set1.first, docA)
-    XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
-    XCTAssertEqual(set1.last, docC)
+    let set = PersistedSet()
+
+    var documents: [SCDocument] = [docA, docB, docC]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? PersistedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      guard let change = changes.first else { return false }
+      guard let document = change.document else { return false }
+      guard let index = change.index else { return false }
+      if let idx = documents.index(of: document) { documents.remove(at: idx) }
+      return documents.count == 0 && index == 0
+    }
+    
+    try! set.insert(docC, at: 0)
+    try! set.insert(docB, at: 0)
+    try! set.insert(docA, at: 0)
+    XCTAssertEqual(set.count, 3)
+    XCTAssertEqual(set.first, docA)
+    XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set.last, docC)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   func testInsertDocuments() {
+    let set1 = PersistedSet()
+    let set2 = PersistedSet()
+
+    var documents: [SCDocument: Int] = [docA: 0, docB: 1, docC: 0]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set1 == n.object as? PersistedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+    
     try! set1.insert(docC, at: 0)
     try! set2.insert(docB, at: 0)
     try! set2.insert(docA, at: 0)
@@ -309,6 +380,10 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set1.first, docA)
     XCTAssertEqual(set1[set1.index(set1.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(set1.last, docC)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testAddReversedDocuments() {
@@ -336,26 +411,76 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   
   func testRemoveDocument() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
+    
+    var documents: [SCDocument: Int] = [docB: 1]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SCOrderedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.deleted] as? [SwiftCollection.Notifications.Change] else { return false }
+      guard let change = changes.first else { return false }
+      guard let document = change.document else { return false }
+      guard let index = change.index else { return false }
+      if index == documents[document] { documents.removeValue(forKey: document) }
+      return documents.count == 0
+    }
+
     XCTAssertEqual(set.count, 3)
     _ = set.remove(docB)
     XCTAssertEqual(set.count, 2)
     try! set.append(docB)
     XCTAssertEqual(set.count, 3)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testRemoveDocuments() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
+    
+    var documents: [SCDocument: Int] = [docA: 0, docC: 1]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SCOrderedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.deleted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     XCTAssertEqual(set.count, 3)
     _ = set.remove(contentsOf: [docA, docC])
     XCTAssertEqual(set.count, 1)
     XCTAssertEqual(set.last, docB)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testRemoveAllDocuments() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
+    
+    var documents: [SCDocument: Int] = [docA: 0, docB: 0, docC: 0]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SCOrderedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.deleted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     XCTAssertEqual(set.count, 3)
     set.removeAll()
     XCTAssertEqual(set.count, 0)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   /*
@@ -366,13 +491,30 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   
   func testReplaceDocument() {
     let set = try! SCOrderedSet<NamedDocument>([docA, docB, docC])
-    XCTAssertEqual(set.count, 3)
-    try! set.replace(docB, with: NamedDocument(id: 0xAF, name: "Z"))
+    let replacement = NamedDocument(id: 0xAF, name: "Z")
+    
+    var documents: [SCDocument: Int] = [replacement: 1]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SCOrderedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.updated] as? [SwiftCollection.Notifications.Change] else { return false }
+      guard changes.count == 1 else { return false }
+      guard let change = changes.first else { return false }
+      guard let document = change.document else { return false }
+      guard let index = change.index else { return false }
+      if document == replacement && index == documents[document] { documents.removeValue(forKey: document) }
+      return documents.count == 0
+    }
+
+    try! set.replace(docB, with: replacement)
     XCTAssertEqual(set.first, docA)
     XCTAssertEqual(set.last, docC)
     let replaced = set[set.index(after: set.startIndex)]
     XCTAssertEqual(replaced.id, docB.id)
     XCTAssertEqual(replaced.name, "Z")
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testReplaceDocumentAtIndex1() {
@@ -416,8 +558,8 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
 
   func testUnion() {
-    try! set1.append(contentsOf: [docA, docB, docC])
-    try! set2.append(contentsOf: [docC, docD])
+    let set1 = try! PersistedSet([docA, docB, docC])
+    let set2 = try! PersistedSet([docC, docD])
     let set = try! set1.union(set2)
     XCTAssertEqual(set.count, 4)
     XCTAssertEqual(set.first, docA)
@@ -425,21 +567,55 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   }
 
   func testInterset() {
-    try! set1.append(contentsOf: [docA, docB, docC])
-    try! set2.append(contentsOf: [docC, docB, docD])
+    let set1 = try! PersistedSet([docA, docB, docC])
+    let set2 = try! PersistedSet([docC, docB, docD])
+
+    var documents: [SCDocument: Int] = [docA: 0]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set1 == n.object as? PersistedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.deleted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     set1.intersect(set2)
     XCTAssertEqual(set1.count, 2)
     XCTAssertEqual(set1.first, docB)
     XCTAssertEqual(set1.last, docC)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testMinus() {
-    try! set1.append(contentsOf: [docA, docB, docC])
-    try! set2.append(contentsOf: [docC, docD])
+    let set1 = try! PersistedSet([docA, docB, docC])
+    let set2 = try! PersistedSet([docC, docD])
+
+    var documents: [SCDocument: Int] = [docC: 2]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set1 == n.object as? PersistedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.deleted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     set1.minus(set2)
     XCTAssertEqual(set1.count, 2)
     XCTAssertEqual(set1.first, docA)
     XCTAssertEqual(set1.last, docB)
+    
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   /*
@@ -494,18 +670,52 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
   
   func testSortedAddDocument() {
     let set = SortedSet()
+    
+    var documents: [SCDocument: Int] = [docA: 0, docB: 1, docC: 2, docD: 0]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SortedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     let c = set.sorting.comparator()
     XCTAssertNotNil(c)
     XCTAssertEqual(set.sorting.sortId, set.name)
     try! set.add(docD)
+    try! set.add(docA)
+    try! set.add(docB)
     try! set.add(docC)
-    XCTAssertEqual(set.count, 2)
-    XCTAssertEqual(set.first, docC)
+    XCTAssertEqual(set.count, 4)
+    XCTAssertEqual(set.first, docA)
+    XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docB)
+    XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 2)], docC)
     XCTAssertEqual(set.last, docD)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   func testSortedAddDocuments() {
     let set = SortedSet()
+    
+    var documents: [SCDocument: Int] = [docA: 0, docB: 1, docC: 0, docD: 1]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SortedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.inserted] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     let c = set.sorting.comparator()
     XCTAssertNotNil(c)
     XCTAssertEqual(set.sorting.sortId, set.name)
@@ -516,17 +726,34 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 2)], docC)
     XCTAssertEqual(set.last, docD)
+    
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
 
   func testChangeSort() {
+    let set = try! SortedSet([docD, docC, docA, docB])
+
+    var documents: [SCDocument: Int] = [docA: 3, docB: 2, docC: 1, docD: 0]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard set == n.object as? SortedSet else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.updated] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let document = change.document else { continue }
+        guard let index = change.index else { continue }
+        if index == documents[document] { documents.removeValue(forKey: document) }
+      }
+      return documents.count == 0
+    }
+
     // default sort by name
-    let set = SortedSet()
-    try! set.add(contentsOf: [docD, docC, docA, docB])
     XCTAssertEqual(set.count, 4)
     XCTAssertEqual(set.first, docA)
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docB)
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 2)], docC)
     XCTAssertEqual(set.last, docD)
+    
     // sort by name, reversed
     set.sorting.sortId = set.rname
     XCTAssertEqual(set.count, 4)
@@ -534,6 +761,10 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 1)], docC)
     XCTAssertEqual(set[set.index(set.startIndex, offsetBy: 2)], docB)
     XCTAssertEqual(set.last, docA)
+
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
   }
   
   /*
@@ -730,6 +961,9 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
    */
   
   func testPersistence() {
+    let set1 = PersistedSet()
+    let set2 = PersistedSet()
+
     // create expectations
     let se = expectation(description: "Save Failed.")
     let le = self.expectation(description: "Load Failed.")
@@ -737,12 +971,12 @@ class SwiftCollectionOrderedSetTests: XCTestCase {
     try! set1.append(contentsOf: [docA, docB, docC])
     
     let load = {
-      XCTAssertEqual(self.set2.count, 0)
-      try! self.set2.load(jsonStorage: .userDefaults, completion: { (success, json) in
+      XCTAssertEqual(set2.count, 0)
+      try! set2.load(jsonStorage: .userDefaults, completion: { (success, json) in
         le.fulfill()
-        XCTAssertEqual(self.set2.count, 3)
-        XCTAssertEqual(self.set2.first, self.docA)
-        XCTAssertEqual(self.set2.last, self.docC)
+        XCTAssertEqual(set2.count, 3)
+        XCTAssertEqual(set2.first, self.docA)
+        XCTAssertEqual(set2.last, self.docC)
       })
     }
     

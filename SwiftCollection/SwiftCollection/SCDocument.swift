@@ -129,4 +129,71 @@ open class SCDocument: SCJsonObject {
     }
   }
 
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Changes
+   * -----------------------------------------------------------------------------------------------
+   */
+
+  /// Creates a new instance of `Changes` to track changes in a document.
+  ///
+  /// - Returns: A new `Changes` object.
+  public func startChanges() -> Changes {
+    return Changes(self)
+  }
+  
+  /// `Changes` provides `SCDocument` with a means to notify observers of changes to properties
+  /// of a document.
+  ///
+  /// For example:
+  ///
+  ///     var changes = Changes(self)
+  ///     let oldValue = self.field
+  ///     self.field = "new"
+  ///     changes.add(SwiftCollection.Notifications.Change("field", oldValue: oldValue, newValue: self.field))
+  ///     ...
+  ///     changes.post()
+  ///
+  public struct Changes {
+    
+    /// Holds a reference to the document where the changes are being applied.
+    fileprivate let document: SCDocument
+    
+    /// Holds a collection of changes by property.  Changes are unique by property name so if
+    /// multiple changes were to occur for a property, only the last change will be sent.
+    fileprivate var changes: [String: SwiftCollection.Notifications.Change] = [:]
+    
+    /// Creates an instance of `Changes` for this document.
+    ///
+    /// - Parameter document: Document to track changes for.
+    public init(_ document: SCDocument) {
+      self.document = document
+    }
+    
+    /// Adds a new change.  The following fields should be populated in the `Change`: `property`,
+    /// `oldValue`, and `newValue`.
+    ///
+    /// - Parameter change: `Change` to be added.
+    public mutating func add(_ change: SwiftCollection.Notifications.Change) {
+      guard let property = change.property else { return }
+      changes[property] = change
+    }
+    
+    /// Removes a change for the specified property.
+    ///
+    /// - Parameter property: Property for change to be removed.
+    public mutating func remove(property: String) {
+      changes.removeValue(forKey: property)
+    }
+    
+    /// Posts a change using `NotificationCenter` for any changes that have been tracked.  The
+    /// changes will be cleared once the notification has been sent.
+    public mutating func post() {
+      let updated = Array(changes.values)
+      SwiftCollection.Notifications.postChange(document, inserted: nil, updated: updated, deleted: nil)
+      changes.removeAll()
+    }
+    
+  }
+  
 }

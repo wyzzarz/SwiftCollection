@@ -84,4 +84,56 @@ class SwiftCollectionDocumentTests: XCTestCase {
     }
   }
   
+  /*
+   * -----------------------------------------------------------------------------------------------
+   * MARK: - Notifications
+   * -----------------------------------------------------------------------------------------------
+   */
+  
+  class NotificationDocument: SCDocument {
+    
+    var a: String = "a"
+    var b: String = "b"
+
+    func update(dict: [String: String]) {
+      var changes = Changes(self)
+      for (k, v) in dict {
+        switch k {
+        case "a":
+          changes.add(SwiftCollection.Notifications.Change(k, oldValue: a, newValue: v))
+          a = v
+        case "b":
+          changes.add(SwiftCollection.Notifications.Change(k, oldValue: b, newValue: v))
+          b = v
+        default: break
+        }
+      }
+      changes.post()
+    }
+    
+  }
+  
+  func testNotifications() {
+    let doc = NotificationDocument()
+    
+    var properties: [String: String] = ["a": "a1", "b": "b2"]
+    expectation(forNotification: SwiftCollection.Notifications.didChange.notification.rawValue, object: nil) { (n) -> Bool in
+      guard doc == n.object as? SCDocument else { return false }
+      guard let changes = n.userInfo?[SwiftCollection.Notifications.Keys.updated] as? [SwiftCollection.Notifications.Change] else { return false }
+      for change in changes {
+        guard let property = change.property else { continue }
+        guard let oldValue = change.oldValue as? String else { continue }
+        guard let newValue = change.newValue as? String else { continue }
+        if property == oldValue && properties[property] == newValue { properties.removeValue(forKey: property) }
+      }
+      return properties.count == 0
+    }
+
+    doc.update(dict: ["a": "a1", "b": "b2"])
+    
+    waitForExpectations(timeout: 60) { (error) in
+      guard error == nil else { XCTFail(error!.localizedDescription); return }
+    }
+  }
+
 }

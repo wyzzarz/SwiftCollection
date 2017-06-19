@@ -153,7 +153,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   public convenience init<C: Collection>(_ collection: C) throws where C.Iterator.Element == Element {
     self.init()
     for element in collection {
-      try append(element)
+      try add(element)
     }
   }
 
@@ -164,7 +164,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   public convenience init<S: Sequence>(_ sequence: S) throws where S.Iterator.Element == Element {
     self.init()
     for element in sequence {
-      try append(element)
+      try add(element)
     }
   }
   
@@ -385,7 +385,10 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     createdIds.remove(document.id)
     
     didInsert(document, at: i, success: true)
-    if !multipleChanges { didEndChanges() }
+    if !multipleChanges {
+      didEndChanges()
+      SwiftCollection.Notifications.postChange(self, inserted: [SwiftCollection.Notifications.Change(document, atIndex: i)], updated: nil, deleted: nil)
+    }
   }
   
   /// Adds the documents to the end of the collection.
@@ -398,10 +401,14 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     willStartChanges()
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
-    for d in newDocuments.reversed() {
+    var changes: [SwiftCollection.Notifications.Change] = []
+    let lastIndex = i + (newDocuments.count as! Int)
+    for (idx, d) in newDocuments.reversed().enumerated() {
       try self.insert(d, at: i, multipleChanges: true)
+      changes.append(SwiftCollection.Notifications.Change(d, atIndex: lastIndex - idx - 1))
     }
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: changes, updated: nil, deleted: nil)
   }
 
   /// Adds the document to the end of the collection.
@@ -441,7 +448,10 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     createdIds.remove(document.id)
 
     didAppend(document, success: true)
-    if !multipleChanges { didEndChanges() }
+    if !multipleChanges {
+      didEndChanges()
+      SwiftCollection.Notifications.postChange(self, inserted: [SwiftCollection.Notifications.Change(document, atIndex: elements.count - 1)], updated: nil, deleted: nil)
+    }
   }
   
   /// Adds documents to the end of the collection.  Existing documents are ignored.
@@ -452,11 +462,14 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     willStartChanges()
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
+    var changes: [SwiftCollection.Notifications.Change] = []
     for d in newDocuments {
       if ids.contains(d.id) { continue }
       try self.append(d, multipleChanges: true)
+      changes.append(SwiftCollection.Notifications.Change(d, atIndex: self.count - 1))
     }
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: changes, updated: nil, deleted: nil)
   }
 
   /// Inserts the document into the collection based on the default sort.  If there is no sort, then
@@ -502,7 +515,10 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     createdIds.remove(document.id)
     
     didAdd(document, at: i, success: true)
-    if !multipleChanges { didEndChanges() }
+    if !multipleChanges {
+      didEndChanges()
+      SwiftCollection.Notifications.postChange(self, inserted: [SwiftCollection.Notifications.Change(document, atIndex: i)], updated: nil, deleted: nil)
+    }
   }
   
   /// Inserts the documents into the collection based on the default sort.  If there is no sort,
@@ -514,11 +530,16 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     willStartChanges()
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
+    var changes: [SwiftCollection.Notifications.Change] = []
     for d in newDocuments {
       if ids.contains(d.id) { continue }
       try self.add(d, multipleChanges: true)
+      if let idx = self.index(of: d) {
+        changes.append(SwiftCollection.Notifications.Change(d, atIndex: self.distance(from: self.startIndex, to: idx)))
+      }
     }
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: changes, updated: nil, deleted: nil)
   }
 
   /*
@@ -532,7 +553,8 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   /// - Parameters:
   ///   - document: Document to be removed.
   open func remove(_ document: Element) -> Element? {
-    return remove(document, multipleChanges: false)
+    let (d, _) = remove(document, multipleChanges: false)
+    return d
   }
   
   /// Removes the document from the collection.
@@ -541,24 +563,33 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   ///   - document: Document to be removed.
   ///   - multipleChanges: `true` if willStartChanges() and didEndChanges() will be executed from another
   ///     routine; `false` otherwise.  Defuault is `false`.
-  fileprivate func remove(_ document: Element, multipleChanges: Bool) -> Element? {
+  fileprivate func remove(_ document: Element, multipleChanges: Bool) -> (Element?, Int?) {
     if !multipleChanges { willStartChanges() }
     guard willRemove(document) else {
       didRemove(document, at: NSNotFound, success: false)
       if !multipleChanges { didEndChanges() }
-      return nil
+      return (nil, nil)
     }
     var removed: Element?
+    var idx: Int?
+    var changes: [SwiftCollection.Notifications.Change] = []
     if let i = index(of: document) {
       removed = elements.remove(at: i.index)
+      idx = i.index
       ids.removeObject(at: i.index)
       didRemove(document, at: i.index, success: true)
+      changes.append(SwiftCollection.Notifications.Change(document, atIndex: i.index))
     } else {
       didRemove(document, at: NSNotFound, success: false)
     }
     createdIds.remove(document.id)
-    if !multipleChanges { didEndChanges() }
-    return removed
+    if !multipleChanges {
+      didEndChanges()
+      if changes.count > 0 {
+        SwiftCollection.Notifications.postChange(self, inserted: nil, updated: nil, deleted: changes)
+      }
+    }
+    return (removed, idx)
   }
  
   /// Removes documents from the collection.
@@ -568,12 +599,15 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   open func remove<C : Collection>(contentsOf newDocuments: C) -> [Element] where C.Iterator.Element == Element {
     willStartChanges()
     var removed: [Element] = []
+    var changes: [SwiftCollection.Notifications.Change] = []
     for d in newDocuments {
-      if let r = remove(d, multipleChanges: true) {
-        removed.append(r)
-      }
+      let (r, i) = remove(d, multipleChanges: true)
+      if r == nil || i == nil { continue }
+      removed.append(r!)
+      changes.append(SwiftCollection.Notifications.Change(r!, atIndex: i!))
     }
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: nil, deleted: changes)
     return removed
   }
 
@@ -581,11 +615,16 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   open func removeAll() {
     willStartChanges()
     guard willRemoveAll() else { return }
+    var changes: [SwiftCollection.Notifications.Change] = []
+    for element in elements {
+      changes.append(SwiftCollection.Notifications.Change(element, atIndex: 0))
+    }
     elements.removeAll()
     ids.removeAllObjects()
     createdIds.removeAll()
     didRemoveAll()
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: nil, deleted: changes)
   }
 
   /*
@@ -639,6 +678,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
     elements[i] = with
     didReplace(existing, with: with, at: i, success: true)
     didEndChanges()
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: [SwiftCollection.Notifications.Change(with, atIndex: i)], deleted: nil)
   }
 
   /*
@@ -655,7 +695,7 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   open func union(_ other: SCOrderedSet<Element>) throws -> SCOrderedSet<Element> {
     let set = self
     for (_, element) in other.enumerated() {
-      if !set.contains(element) { try set.append(element) }
+      if !set.contains(element) { try set.add(element) }
     }
     return set
   }
@@ -664,32 +704,38 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   ///
   /// - Parameter other: Other set to perform the intersection.
   open func intersect(_ other: SCOrderedSet<Element>) {
+    var changes: [SwiftCollection.Notifications.Change] = []
     var i = 0
     while i < elements.count {
       let element = elements[i]
       if !other.contains(element) {
         elements.remove(at: i)
         ids.removeObject(at: i)
+        changes.append(SwiftCollection.Notifications.Change(element, atIndex: i))
       } else {
         i += 1
       }
     }
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: nil, deleted: changes)
   }
 
   /// Removes any element in this set that is present in the other set.
   ///
   /// - Parameter other: Other set to perform the subtraction.
   open func minus(_ other: SCOrderedSet<Element>) {
+    var changes: [SwiftCollection.Notifications.Change] = []
     var i = 0
     while i < elements.count {
       let element = elements[i]
       if other.contains(element) {
         elements.remove(at: i)
         ids.removeObject(at: i)
+        changes.append(SwiftCollection.Notifications.Change(element, atIndex: i))
       } else {
         i += 1
       }
     }
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: nil, deleted: changes)
   }
 
   /*
@@ -786,11 +832,14 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   
   public func sort() {
     guard let c = sorting.comparator() else { return }
-    self.elements = self.sorted(by: c)
-    self.ids.removeAllObjects()
-    for element in elements {
+    elements = sorted(by: c)
+    ids.removeAllObjects()
+    var changes: [SwiftCollection.Notifications.Change] = []
+    for (i, element) in elements.enumerated() {
       ids.add(element.id)
+      changes.append(SwiftCollection.Notifications.Change(element, atIndex: i))
     }
+    SwiftCollection.Notifications.postChange(self, inserted: nil, updated: changes, deleted: nil)
   }
 
   /*
