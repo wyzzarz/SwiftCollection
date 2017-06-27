@@ -350,11 +350,12 @@ open class SCJsonObject: NSObject {
 
   fileprivate static let storageKeyRoot = "\(SwiftCollection.bundleId).SCJsonObject"
 
-  fileprivate lazy var storageUrl: URL? = {
+  fileprivate static let storageUrl: URL? = {
     let fm = FileManager.default
     guard let documentsUrl = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
     let storageUrl = documentsUrl.appendingPathComponent(SwiftCollection.bundleId, isDirectory: true)
     try? fm.createDirectory(at: storageUrl, withIntermediateDirectories: true, attributes: nil)
+    print("Storage: \(storageUrl.absoluteString)")
     return storageUrl
   }()
   
@@ -387,10 +388,7 @@ open class SCJsonObject: NSObject {
     case .userDefaults:
       return nil
     case .documents:
-      let url = URL(fileURLWithPath: storageKey(), relativeTo: storageUrl).appendingPathExtension("json")
-      #if DEBUG
-        print(url.absoluteString)
-      #endif
+      let url = URL(fileURLWithPath: storageKey(), relativeTo: SCJsonObject.storageUrl).appendingPathExtension("json")
       return url
     }
   }
