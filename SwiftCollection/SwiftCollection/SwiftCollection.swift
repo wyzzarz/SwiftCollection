@@ -171,7 +171,7 @@ public struct SwiftCollection {
       /// - Parameters:
       ///   - document: Document that was inserted or removed.
       ///   - index: Index in collection for document.
-      init(_ document: SCDocument?, atIndex index: Int?) {
+      public init(_ document: SCDocument?, atIndex index: Int?) {
         self.document = document
         self.index = index
         self.property = nil
@@ -185,7 +185,7 @@ public struct SwiftCollection {
       ///   - property: Property that was updated.
       ///   - oldValue: Original value for property.
       ///   - newValue: New value for property.
-      init(_ property: String?, oldValue: String?, newValue: String?) {
+      public init(_ property: String?, oldValue: String?, newValue: String?) {
         self.document = nil
         self.index = nil
         self.property = property
