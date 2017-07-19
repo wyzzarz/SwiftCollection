@@ -188,7 +188,10 @@ open class SCDocument: SCJsonObject {
     
     /// Posts a change using `NotificationCenter` for any changes that have been tracked.  The
     /// changes will be cleared once the notification has been sent.
+    ///
+    /// If there are no changes, then no notification will be set.
     public mutating func post() {
+      guard changes.count > 0 else { return }
       let updated = Array(changes.values)
       SwiftCollection.Notifications.postChange(document, inserted: nil, updated: updated, deleted: nil)
       changes.removeAll()
