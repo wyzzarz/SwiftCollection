@@ -376,7 +376,7 @@ open class SCJsonObject: NSObject {
   fileprivate func storageKeyPath() throws -> String {
     // get the key
     let key = storageKey()
-    guard key.characters.count > 0 else { throw SwiftCollection.Errors.missingStorageKey }
+    guard key.count > 0 else { throw SwiftCollection.Errors.missingStorageKey }
     
     // return the key with this framework's bundle id
     return "\(SCJsonObject.storageKeyRoot).\(key)"

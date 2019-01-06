@@ -399,10 +399,11 @@ open class SCOrderedSet<Element: SCDocument>: SCJsonObject, SCOrderedSetDelegate
   /// - Throws: `missingId` if a document has no id.
   open func insert<C : Collection>(contentsOf newDocuments: C, at i: Int) throws where C.Iterator.Element == Element {
     willStartChanges()
+
     let newTotal = ids.count + Int(newDocuments.count.toIntMax())
     elements.reserveCapacity(newTotal)
     var changes: [SwiftCollection.Notifications.Change] = []
-    let lastIndex = i + (newDocuments.count as! Int)
+    let lastIndex = i + newDocuments.count
     for (idx, d) in newDocuments.reversed().enumerated() {
       try self.insert(d, at: i, multipleChanges: true)
       changes.append(SwiftCollection.Notifications.Change(d, atIndex: lastIndex - idx - 1))

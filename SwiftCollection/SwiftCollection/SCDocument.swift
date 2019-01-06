@@ -98,7 +98,7 @@ open class SCDocument: SCJsonObject {
    * -----------------------------------------------------------------------------------------------
    */
   
-  override open var hashValue: Int {
+  override open var hash: Int {
     return _id.hashValue
   }
   

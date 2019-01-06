@@ -64,7 +64,7 @@ extension String {
   ///   - c: Character to be inserted on the left.
   /// - Returns: A left padded string.  Or the original string if padding is unecessary.
   public func padding(toLength length: Int, withLeftPad c: Character) -> String {
-    let diff = length - characters.count
+    let diff = length - count
     if diff <= 0 { return self }
     return String(repeating: String(c), count: diff) + self
   }

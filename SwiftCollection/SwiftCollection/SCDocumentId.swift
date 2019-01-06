@@ -57,7 +57,7 @@ extension SwiftCollection.Id {
   public func toHexString(groupEvery numBytes: Int = 0, separator c: Character = "-") -> String {
     let numCharacterBytes = numBytes * 2
     var hex = String(self, radix: 16, uppercase: true).padding(toLength: MemoryLayout<SwiftCollection.Id>.stride * 2, withLeftPad: "0")
-    if numCharacterBytes > 0 && hex.characters.count > numCharacterBytes {
+    if numCharacterBytes > 0 && hex.count > numCharacterBytes {
       var i = hex.index(hex.startIndex, offsetBy: numCharacterBytes)
       while true {
         hex.insert(c, at: i)

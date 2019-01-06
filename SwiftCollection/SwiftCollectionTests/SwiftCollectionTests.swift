@@ -30,7 +30,7 @@ class SwiftCollectionTests: XCTestCase {
   }
   
   func testBundle() {
-    XCTAssertTrue(SwiftCollection.bundleId.characters.count > 0)
+    XCTAssertTrue(SwiftCollection.bundleId.count > 0)
     XCTAssertNotNil(SwiftCollection.bundle)
   }
   
